@@ -403,6 +403,8 @@ class mod_vpl_submission {
 	  $info = $this->vpl->get_instance();
 
 	  $percent = $info->percent_drop*$lateDays;
+	  $message = $lateDays." late, converting from ".$grade." to ".$percent." off ";
+	  error_log($message);
 	  //return altered grade
 	  if($percent >= 1) { return 0; }
 	  return $grade*(1-$percent); 
@@ -487,13 +489,15 @@ class mod_vpl_submission {
             // If no grade then don't set rawgrade and feedback.
             if ( $scaleid != 0 ) {
 	    
-	       $feedback =""
-	       if($this->should_record($info->grade)
+	       $feedback ="Is this getting ignored?";
+	       if($this->should_record($info->grade))
 	       {
-	       	$adjustedGrade = $this->reduce_grade($info->grade); 
-		$adjustedGrade -= $this->get_late__grade($adjustedGrade);
-		$gradeinfo['rawgrade'] = $rawGrade;
-	       }
+	       	$adjustedGradeTries = $this->reduce_grade($info->grade); 
+		$adjustedGradeLate = $this->get_late_grade($adjustedGradeTries);
+		$gradeinfo['rawgrade'] = $adjustedGradeLate;
+		$message = "calculating grade from '$info->grade' to ".$adjustedGradeTries." to ".$adjustedGradeLate;
+		error_log($message);
+		}
 	       else //Warn students their assignment is not done yet.
 	       {
 	          $feedback .="<b>Assignment must work at 100% to get credit</b>

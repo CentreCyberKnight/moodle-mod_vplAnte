@@ -530,11 +530,15 @@ function xmldb_vpl_upgrade($oldversion = 0) {
 
 if ($oldversion <  2023061713) {
 
+       	global $DB;
+
+        $dbman = $DB->get_manager();
+
         // Define field must_complete to be added to vpl.
         $table = new xmldb_table('vpl');
         $complete_field = new xmldb_field('must_complete', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', null);
 
-        $percent_drop_field = new xmldb_field('percent_drop', XMLDB_TYPE_NUMBER, '5', null, XMLDB_NOTNULL, null, '0', null);
+        $percent_drop_field = new xmldb_field('percent_drop', XMLDB_TYPE_NUMBER, '5,4', null, XMLDB_NOTNULL, null, '0', null);
 
         // Conditionally launch add field must_complete.
         if (!$dbman->field_exists($table, $complete_field)) {
@@ -542,7 +546,7 @@ if ($oldversion <  2023061713) {
         }
 
         if (!$dbman->field_exists($table, $percent_drop_field)) {
-            $dbman->add_field($table, $percent_drop__field);
+            $dbman->add_field($table, $percent_drop_field);
         }
 
         // Vpl savepoint reached.
