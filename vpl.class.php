@@ -1037,7 +1037,10 @@ class mod_vpl {
         $now = time();
         $startdate = $this->get_effective_setting('startdate', $userid);
         $duedate = $this->get_effective_setting('duedate', $userid);
-        return $startdate <= $now && ($duedate == 0 || $duedate >= $now);
+	$percent_drop = $this->get_effective_setting('percent_drop', $userid);
+
+	return $startdate <= $now && ($duedate == 0 || $duedate >= $now || $percent_drop != 0);
+
     }
 
     /**

@@ -365,6 +365,71 @@ class mod_vpl_submission {
         return $grade;
     }
 
+
+	/**
+	   calculates the number of days this assignment is late rounded up.
+	   @return int
+	 */
+	function days_late()
+	{
+	  $info = $this->vpl->get_instance();
+	  $late = time() - $info->duedate;
+	  
+	  if($late<0) {return 0; }
+	  //calc days late
+	  $day = 60*60*24;
+	  $lateDays = (int) (($late /$day)+1);
+	  return $lateDays;
+
+	}
+
+
+	
+	/**
+	   Return the grade calculated using the percent_drop field
+	   return original grade if not late or percent_drop ==0
+	   returns 0 if too late
+	   returns grade *(1-percentage lost) if late
+	   @param $grade raw gradeof student
+	   @return float
+
+	 */
+	function get_late_grade($grade)
+	{
+	  $lateDays = $this->days_late();
+
+	  //if($late <0) { return $grade; }
+
+	  $info = $this->vpl->get_instance();
+
+	  $percent = $info->percent_drop*$lateDays;
+	  //return altered grade
+	  if($percent >= 1) { return 0; }
+	  return $grade*(1-$percent); 
+
+	}
+
+
+	/**
+	   Returns true if the grade should be recorded
+	   If onlyComplete is set grades are only recorded if completed.
+	   @param $grade
+	 */
+	function should_record($grade)
+	{
+	  $info = $this->vpl->get_instance();
+	  //check if must_complete is set
+	  if($info->must_complete==1)
+	    {
+	      //	      print("$grade vs $info->grade");
+	      return $grade == $info->grade;
+	    }
+	  else { return true; }
+	}
+
+
+
+
     /**
      * Set/update grade
      *
@@ -421,8 +486,30 @@ class mod_vpl_submission {
             $gradeinfo = array ();
             // If no grade then don't set rawgrade and feedback.
             if ( $scaleid != 0 ) {
-                $gradeinfo['rawgrade'] = $this->reduce_grade($info->grade);
-                $gradeinfo['feedback'] = $this->result_to_html( $comments, false );
+	    
+	       $feedback =""
+	       if($this->should_record($info->grade)
+	       {
+	       	$adjustedGrade = $this->reduce_grade($info->grade); 
+		$adjustedGrade -= $this->get_late__grade($adjustedGrade);
+		$gradeinfo['rawgrade'] = $rawGrade;
+	       }
+	       else //Warn students their assignment is not done yet.
+	       {
+	          $feedback .="<b>Assignment must work at 100% to get credit</b>
+		  <br/>";
+	       }
+                $feedback .= $this->result_to_html( $comments, false );
+
+		$daysLate = $this->days_late();
+		if($daysLate>0)
+		{
+				    
+		    $feedback .="<b>Work was $daysLate days Late</b>";
+		}
+		$gradeinfo['feedback'] = $feedback;
+
+		
                 $gradeinfo['feedbackformat'] = FORMAT_HTML;
             }
             if ($this->instance->grader > 0) { // Don't add grader if automatic.
