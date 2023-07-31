@@ -477,45 +477,62 @@ class mod_vpl_submission {
             $this->instance->grade = $info->grade;
             // Save assessment comments.
             $comments = $info->comments;
-            $fn = $this->get_gradecommentsfilename();
-            if ($comments) {
-                vpl_fwrite( $fn, $comments );
-            } else if (file_exists( $fn )) {
-                unlink( $fn );
-            }
-            // Update gradebook.
+
+	    // Update gradebook.
             $grades = array ();
             $gradeinfo = array ();
-            // If no grade then don't set rawgrade and feedback.
-            if ( $scaleid != 0 ) {
-	    
-	       $feedback ="Is this getting ignored?";
+            //If no grade then don't set rawgrade and feedback.
+	    if ( $scaleid != 0 ) {
+
+	       $feedback ="";
+	       $commentAdded="";
+
 	       if($this->should_record($info->grade))
 	       {
 	       	$adjustedGradeTries = $this->reduce_grade($info->grade); 
 		$adjustedGradeLate = $this->get_late_grade($adjustedGradeTries);
 		$gradeinfo['rawgrade'] = $adjustedGradeLate;
-		$message = "calculating grade from '$info->grade' to ".$adjustedGradeTries." to ".$adjustedGradeLate;
-		error_log($message);
+		error_log("Raw comments".$comments);
 		}
 	       else //Warn students their assignment is not done yet.
 	       {
-	          $feedback .="<b>Assignment must work at 100% to get credit</b>
-		  <br/>";
+		  $incompleteMessage = "Assignment must work at 100% to get credit";
+		  $feedback .="<b>".$incompleteMessage."</b><br/><br/>";
+		  $commentAdded .= "-".$incompleteMessage."\n";
 	       }
-                $feedback .= $this->result_to_html( $comments, false );
-
 		$daysLate = $this->days_late();
 		if($daysLate>0)
 		{
-				    
-		    $feedback .="<b>Work was $daysLate days Late</b>";
+		   $lateMessage = "Work was $daysLate day(s) late";				    
+		   $feedback .="<b>$lateMessage</b><br/>";
+		   $commentAdded .="-".$lateMessage."\n";
 		}
-		$gradeinfo['feedback'] = $feedback;
 
+		
+		$gradeinfo['feedback'] = $feedback.$this->result_to_html( $comments, false );
+
+		$comments = $commentAdded.$comments;
 		
                 $gradeinfo['feedbackformat'] = FORMAT_HTML;
             }
+
+	    //save comments to file here!
+	    
+
+            $fn = $this->get_gradecommentsfilename();
+//	    if($feedback)
+//	    {
+//	        vpl_fwrite( $fn, $feedback );
+//	    }
+	    if ($comments) {
+	       error_log("storing comments".$comments);
+                vpl_fwrite( $fn, $comments );
+            } else if (file_exists( $fn )) {
+                unlink( $fn );
+            }
+
+
+
             if ($this->instance->grader > 0) { // Don't add grader if automatic.
                 $gradeinfo['usermodified'] = $this->instance->grader;
             } else { // This avoid to use an unexisting userid (0) in the gradebook.
