@@ -403,8 +403,6 @@ class mod_vpl_submission {
 	  $info = $this->vpl->get_instance();
 
 	  $percent = $info->percent_drop*$lateDays;
-	  $message = $lateDays." late, converting from ".$grade." to ".$percent." off ";
-	  error_log($message);
 	  //return altered grade
 	  if($percent >= 1) { return 0; }
 	  return $grade*(1-$percent); 
@@ -492,7 +490,6 @@ class mod_vpl_submission {
 	       	$adjustedGradeTries = $this->reduce_grade($info->grade); 
 		$adjustedGradeLate = $this->get_late_grade($adjustedGradeTries);
 		$gradeinfo['rawgrade'] = $adjustedGradeLate;
-		error_log("Raw comments".$comments);
 		}
 	       else //Warn students their assignment is not done yet.
 	       {
@@ -525,7 +522,6 @@ class mod_vpl_submission {
 //	        vpl_fwrite( $fn, $feedback );
 //	    }
 	    if ($comments) {
-	       error_log("storing comments".$comments);
                 vpl_fwrite( $fn, $comments );
             } else if (file_exists( $fn )) {
                 unlink( $fn );
