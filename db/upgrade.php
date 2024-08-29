@@ -554,7 +554,7 @@ function xmldb_vpl_upgrade($oldversion = 0) {
         upgrade_mod_savepoint(true, $vpl43, 'vpl');
     }
 
-    $vpl43Ante = 2024053113
+    $vpl43Ante = 2024053113;
     if ($oldversion < $vpl43Ante ) {
 
         global $DB;
