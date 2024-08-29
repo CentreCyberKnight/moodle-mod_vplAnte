@@ -24,24 +24,7 @@
  */
 defined('MOODLE_INTERNAL') || die();
 
-define( 'VPL', 'vpl' );
-define( 'VPL_SUBMISSIONS', 'vpl_submissions' );
-define( 'VPL_JAILSERVERS', 'vpl_jailservers' );
-define( 'VPL_RUNNING_PROCESSES', 'vpl_running_processes' );
-define( 'VPL_VARIATIONS', 'vpl_variations' );
-define( 'VPL_ASSIGNED_VARIATIONS', 'vpl_assigned_variations' );
-define( 'VPL_OVERRIDES', 'vpl_overrides' );
-define( 'VPL_ASSIGNED_OVERRIDES', 'vpl_assigned_overrides' );
-define( 'VPL_GRADE_CAPABILITY', 'mod/vpl:grade' );
-define( 'VPL_VIEW_CAPABILITY', 'mod/vpl:view' );
-define( 'VPL_SUBMIT_CAPABILITY', 'mod/vpl:submit' );
-define( 'VPL_SIMILARITY_CAPABILITY', 'mod/vpl:similarity' );
-define( 'VPL_ADDINSTANCE_CAPABILITY', 'mod/vpl:addinstance' );
-define( 'VPL_SETJAILS_CAPABILITY', 'mod/vpl:setjails' );
-define( 'VPL_MANAGE_CAPABILITY', 'mod/vpl:manage' );
-define( 'VPL_EVENT_TYPE_DUE', 'duedate');
-define( 'VPL_LOCK_TIMEOUT', 10);
-
+require_once(dirname(__FILE__).'/locallib_consts.php');
 require_once(dirname(__FILE__).'/vpl.class.php');
 
 /**
@@ -159,7 +142,7 @@ function vpl_delete_dir($dirname) {
             if (! $dd) {
                 return false;
             }
-            $list = array ();
+            $list = [];
             while ( $name = readdir( $dd ) ) {
                 if ($name != '.' && $name != '..') {
                     $list[] = $name;
@@ -220,13 +203,13 @@ function vpl_output_zip($zipfilename, $name) {
 /**
  * @codeCoverageIgnore
  *
- * Get lang code @parm $bashadapt true adapt lang to bash LANG (default false)
+ * Get lang code @parm $bashadapt true adapt lang to bash LANG (default true)
  *
  * @return string
  */
-function vpl_get_lang($bashadapt = false) {
+function vpl_get_lang($bashadapt = true) {
     global $SESSION, $USER, $CFG;
-    $commonlangs = array (
+    $commonlangs = [
             'aa' => 'DJ',
             'af' => 'ZA',
             'am' => 'ET',
@@ -268,8 +251,8 @@ function vpl_get_lang($bashadapt = false) {
             'tk' => 'TM',
             'tr' => 'TR',
             'uk' => 'UA',
-            'yo' => 'NG'
-    );
+            'yo' => 'NG',
+    ];
     if (isset( $SESSION->lang )) {
         $lang = $SESSION->lang;
     } else if (isset( $USER->lang )) {
@@ -277,14 +260,14 @@ function vpl_get_lang($bashadapt = false) {
     } else if (isset( $CFG->lang )) {
         $lang = $CFG->lang;
     } else {
-        $lang = 'en';
+        return "en";
     }
     if ($bashadapt) {
         $parts = explode( '_', $lang );
-        if (count( $parts ) == 2) {
+        if (count($parts) == 2) {
             $lang = $parts[0];
         }
-        if (isset( $commonlangs[$lang] )) {
+        if (isset($commonlangs[$lang])) {
             $lang = $lang . '_' . $commonlangs[$lang];
         }
         $lang .= '.UTF-8';
@@ -348,6 +331,20 @@ function vpl_mod_href() {
         $href .= ($p > 1 ? '&amp;' : '?') . urlencode( $parms[$p] ) . '=' . urlencode( $parms[$p + 1] );
     }
     return $href;
+}
+
+/**
+ * @codeCoverageIgnore
+ *
+ * @todo This function is to be remove when Moodle 3.10 be not supported by VPL.
+ * Return 'gradeoun' or 'grade' for backward compatibility.
+ * @return string
+ */
+function vpl_get_gradenoun_str() {
+    if (get_string_manager()->string_exists('gradenoun', 'core')) {
+        return 'gradenoun';
+    }
+    return 'grade';
 }
 
 /**
@@ -508,9 +505,9 @@ function vpl_get_select_time($maximum = null) {
     if ($maximum === null) { // Default value.
         $maximum = 35 * $minute;
     }
-    $ret = array (
-            0 => get_string( 'select' )
-    );
+    $ret = [
+            0 => get_string( 'select' ),
+    ];
     if ($maximum <= 0) {
         return $ret;
     }
@@ -542,19 +539,19 @@ function vpl_get_select_time($maximum = null) {
  * @return string
  */
 function vpl_conv_size_to_string($size) {
-    static $measure = array (
+    static $measure = [
             1024,
             1048576,
             1073741824,
             1099511627776,
-            PHP_INT_MAX
-    );
-    static $measurename = array (
+            PHP_INT_MAX,
+    ];
+    static $measurename = [
             'KiB',
             'MiB',
             'GiB',
-            'TiB'
-    );
+            'TiB',
+    ];
     for ($i = 0; $i < count( $measure ) - 1; $i ++) {
         if ($measure[$i] <= 0) { // Check for int overflow.
             $num = $size / $measure[$i - 1];
@@ -614,9 +611,9 @@ function vpl_get_select_sizes(int $minimum = 0, int $maximum = PHP_INT_MAX): arr
     if ($maximum > 17.0e9) {
         $maximum = 16 * 1073741824;
     }
-    $ret = array (
-            0 => get_string( 'select' )
-    );
+    $ret = [
+            0 => get_string( 'select' ),
+    ];
     if ($minimum > 0) {
         $value = $minimum;
     } else {
@@ -698,7 +695,7 @@ function vpl_rtzeros($value) {
  * @return array with index as key and url as value
  */
 function vpl_select_index($url, $array) {
-    $ret = array ();
+    $ret = [];
     foreach ($array as $value) {
         $ret[$value] = $url . $value;
     }
@@ -715,7 +712,7 @@ function vpl_select_index($url, $array) {
  * @return array with url as key and text as value
  */
 function vpl_select_array($url, $array) {
-    $ret = array ();
+    $ret = [];
     foreach ($array as $value) {
         $ret[$url . $value] = get_string( $value, VPL );
     }
@@ -847,10 +844,19 @@ function vpl_truncate_string(&$string, $limit) {
  */
 function vpl_bash_export($var, $value) {
     if ( is_int($value) ) {
-        return 'export ' . $var . '=' . $value . "\n";
+        $ret = "export $var=$value\n";
+    } else if (is_array($value)) {
+        $ret = "export $var=( ";
+        foreach ($value as $data) {
+            $ret .= '"' . str_replace('"', '\"', $data) . '" ';
+        }
+        $ret .= ")\n";
     } else {
-        return 'export ' . $var . "='" . str_replace( "'", "'\"'\"'", $value ) . "'\n";
+        $ret = "export $var=\"";
+        $ret .= str_replace('"', '\"', $value);
+        $ret .= "\"\n";
     }
+    return $ret;
 }
 
 /**
@@ -878,6 +884,9 @@ function vpl_s() {
 function vpl_truncate_vpl($instance) {
     if (isset($instance->password)) {
         $instance->password = trim($instance->password);
+    }
+    if (property_exists($instance, 'jailservers') &&  $instance->jailservers == null) {
+        $instance->jailservers = '';
     }
     foreach (['name', 'requirednet', 'password', 'variationtitle'] as $field) {
         if (isset($instance->$field)) {
@@ -1016,10 +1025,10 @@ function vpl_get_webservice_available() {
     if (! $CFG->enablewebservices) {
         return false;
     }
-    $service = $DB->get_record( 'external_services', array (
+    $service = $DB->get_record( 'external_services', [
             'shortname' => 'mod_vpl_edit',
-            'enabled' => 1
-    ) );
+            'enabled' => 1,
+    ] );
     return ! empty( $service );
 }
 
@@ -1035,33 +1044,33 @@ function vpl_get_webservice_token($vpl) {
     if (! $CFG->enablewebservices) {
         return '';
     }
-    $service = $DB->get_record( 'external_services', array (
+    $service = $DB->get_record( 'external_services', [
             'shortname' => 'mod_vpl_edit',
-            'enabled' => 1
-    ) );
+            'enabled' => 1,
+    ] );
     if (empty( $service )) {
         return '';
     }
-    $tokenrecord = $DB->get_record( 'external_tokens', array (
+    $tokenrecord = $DB->get_record( 'external_tokens', [
             'sid' => session_id(),
             'userid' => $USER->id,
-            'externalserviceid' => $service->id
-    ) );
+            'externalserviceid' => $service->id,
+    ] );
     if (! empty( $tokenrecord ) && $tokenrecord->validuntil < $now) {
         unset( $tokenrecord ); // Will be delete before creating a new one.
     }
     if (empty( $tokenrecord )) {
         // Remove old tokens from DB.
         $select = 'validuntil > 0 AND  validuntil < ?';
-        $DB->delete_records_select( 'external_tokens', $select, array (
-                $now
-        ) );
+        $DB->delete_records_select( 'external_tokens', $select, [
+                $now,
+        ] );
         // Generate unique token.
         for ($i = 0; $i < 100; $i ++) {
             $token = md5( uniqid( mt_rand(), true ) );
-            $tokenrecord = $DB->get_record( 'external_tokens', array (
-                    'token' => $token
-            ) );
+            $tokenrecord = $DB->get_record( 'external_tokens', [
+                    'token' => $token,
+            ] );
             if (empty( $tokenrecord )) {
                 break;
             }
@@ -1145,7 +1154,7 @@ function vpl_call_with_lock(string $locktype, string $resource, string $function
             $result = $function(...$parms);
             $lock->release();
             return $result;
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $lock->release();
             throw $e;
         }
@@ -1168,7 +1177,18 @@ function vpl_call_with_transaction(string $function, array $parms) {
         $result = $function(...$parms);
         $transaction->allow_commit();
         return $result;
-    } catch (Exception $e) {
+    } catch (\Throwable $e) {
         $transaction->rollback($e);
     }
+}
+
+/**
+ * Return full path to the directory of scripts.
+ *
+ * @return string
+ * @codeCoverageIgnore
+ */
+function vpl_get_scripts_dir() {
+    global $CFG;
+    return $CFG->dirroot . '/mod/vpl/jail/default_scripts';
 }

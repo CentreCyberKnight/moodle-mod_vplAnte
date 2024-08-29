@@ -31,10 +31,28 @@ use Exception;
  */
 class assertf {
     /**
+     * Flag for enable or disable asserts, default disable.
+     */
+    private static bool $disable = true;
+
+    /**
+     * Disable asserts.
+     */
+    public static function set_disable() {
+        self::$disable = true;
+    }
+    /**
+     * Enable asserts.
+     */
+    public static function set_enable() {
+        self::$disable = false;
+    }
+
+    /**
      * Flag to enable or disable the colors at error messages.
      * This option must be false at production.
      */
-    public static bool $messagewithcolors = true;
+    public static bool $messagewithcolors = false;
 
     /**
      * Get error message for passed filename and message
@@ -64,6 +82,9 @@ class assertf {
      * @return void
      */
     public static function assert(bool $cond, ?string $filename, string $message): void {
+        if (self::$disable) {
+            return;
+        }
         if ($cond != true) {
             $messagecustomized = self::get_error($filename, $message);
             throw new Exception($messagecustomized);

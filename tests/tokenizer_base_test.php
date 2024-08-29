@@ -30,6 +30,7 @@ global $CFG;
 require_once($CFG->dirroot . '/mod/vpl/tests/base_test.php');
 
 use mod_vpl\tokenizer\token;
+use mod_vpl\util\assertf;
 
 /**
  * Unit tests for \mod_vpl\tokenizer\tokenizer_base class.
@@ -82,20 +83,21 @@ class tokenizer_base_test extends \advanced_testcase {
      * Available tokens to use to test tokenizer::check_token
      */
     protected const AVAILABLETOKENS = [
-        "text",
-        "comment",
-        "comment.line",
-        "constant",
-        "constant.character",
-        "constant.character.escape",
-        "storage",
-        "storage.type"
+        "text" => 0,
+        "comment" => 0,
+        "comment.line" => 0,
+        "constant" => 0,
+        "constant.character" => 0,
+        "constant.character.escape" => 0,
+        "storage" => 0,
+        "storage.type" => 0,
     ];
 
     /**
      * Prepare test cases before the execution
      */
     public static function setUpBeforeClass(): void {
+        assertf::set_enable();
         self::$testcasesrcg = [
             "()"           => "()",
             "(a)"          => "(?:a)",
@@ -103,7 +105,7 @@ class tokenizer_base_test extends \advanced_testcase {
             "(a)(b)"       => "(?:a)(?:b)",
             "(ab)(d)"      => "(?:ab)(?:d)",
             "(ab)(d)()"    => "(?:ab)(?:d)()",
-            "(ax(by))[()]" => "(?:ax(?:by))[()]"
+            "(ax(by))[()]" => "(?:ax(?:by))[()]",
         ];
 
         self::$testcasesckt = [
@@ -117,19 +119,19 @@ class tokenizer_base_test extends \advanced_testcase {
             "array_string" => [ true => [ [ "example", "", "10"], [ "test" ] ], false => [ [ "10", "", 30 ], "10" ] ],
             "array_array"  => [ true => [ [ [ 10, 20, 30 ] ], [[10]] ], false => [ [ 10, "", 30 ], [10] ] ],
             "array_object" => [ true => [ [ (object)["h" => 10] ], [(object)[]] ], false => [ [ 10, "", 30 ], 10 ] ],
-            "array_not_valid_type" => [ false => [ [ 10, 20, 30 ] ] ]
+            "array_not_valid_type" => [ false => [ [ 10, 20, 30 ] ] ],
         ];
 
         self::$testcasesctk = [
             true  => [
                 "text", "comment", "comment.line", "constant", "constant.character",
                 "constant.character.escape", "storage", "storage.type",
-                [ "text" ], [ "text", "comment" ], [ "text", "comment.line", "constant.character" ]
+                [ "text" ], [ "text", "comment" ], [ "text", "comment.line", "constant.character" ],
             ],
             false => [
                 "", "hello", "comment.multiple", "constant.regex", "variable",
-                [], [ "text.line"], [ "text", "comment.multiple", "character" ]
-            ]
+                [], [ "text.line"], [ "text", "comment.multiple", "character" ],
+            ],
         ];
 
         self::$testcasesgat = [
@@ -138,44 +140,49 @@ class tokenizer_base_test extends \advanced_testcase {
             2 => [ 'input'  => [ 'type' => [ 'type' ], 'value' => '', 'regex' => '/((?:int)(?:a))|($)/' ], 'output' => [] ],
             3 => [
                 'input'  => [ 'type' => [ 'type' ], 'value' => 'int', 'regex' => '((?:int))|($)' ],
-                'output' => [ new token('type', 'int', 0) ]
+                'output' => [ new token('type', 'int', 0) ],
             ],
             4 => [
                 'input'  => [
                     'type' => [ 'storage.type', 'text', 'identifier' ],
                     'value' => 'int a',
-                    'regex' => '/((?:int)(?:\s+)(?:[a-z]))|($)/'
+                    'regex' => '/((?:int)(?:\s+)(?:[a-z]))|($)/',
                 ],
-                'output' => [ new token('storage.type', 'int', 0), new token('text', ' ', 0), new token('identifier', 'a', 0) ]
+                'output' => [ new token('storage.type', 'int', 0), new token('text', ' ', 0), new token('identifier', 'a', 0) ],
             ],
             5 => [
                 'input' => [
                     'type' => [ 'id', 'text', 'paren.lparen', 'paren.rparen', 'text', 'paren.lparen' ],
                     'value' => 'hello () {',
-                    'regex' => '/((?:[a-z]+)(?:\s*)(?:\()(?:\))(?:\s+)(?:\{))|($)/'
+                    'regex' => '/((?:[a-z]+)(?:\s*)(?:\()(?:\))(?:\s+)(?:\{))|($)/',
                 ],
                 'output' => [
                     new token('id', 'hello', 0), new token('text', ' ', 0),
                     new token('paren.lparen', '(', 0), new token('paren.rparen', ')', 0),
-                    new token('text', ' ', 0), new token('paren.lparen', '{', 0)
-                ]
-            ]
+                    new token('text', ' ', 0), new token('paren.lparen', '{', 0),
+                ],
+            ],
         ];
 
         self::$statetosearchrules = [
             (object)["token" => "string.double", "regex" => "\".*\""],
             (object)["token" => "comment", "regex" => "\\/\\/", "next" => "start"],
-            (object)["default_token" => "comment"]
+            (object)["default_token" => "comment"],
         ];
     }
-
+    /**
+     * Remove setting after the execution.
+     */
+    public static function tearDownAfterClass(): void {
+        assertf::set_disable();
+    }
     /**
      * Method to test tokenizer_base::remove_capturing_groups
      *
      * Test cases based on Ace Editor unit tests:
      * (https://github.com/ajaxorg/ace/blob/master/lib/ace/tokenizer_test.js)
      */
-    public function test_remove_capturing_groups() {
+    public function test_remove_capturing_groups(): void {
         foreach (self::$testcasesrcg as $src => $expectedregex) {
             $regex = testable_tokenizer_base::remove_capturing_groups($src);
             $this->assertSame($expectedregex, $regex);
@@ -185,7 +192,7 @@ class tokenizer_base_test extends \advanced_testcase {
     /**
      * Method to test tokenizer_base::check_type
      */
-    public function test_check_type() {
+    public function test_check_type(): void {
         foreach (self::$testcasesckt as $type => $values) {
             if (isset($values[true])) {
                 foreach ($values[true] as $validvalue) {
@@ -216,7 +223,7 @@ class tokenizer_base_test extends \advanced_testcase {
      * Naming conventions are inspired in TextMate manual,
      * see https://macromates.com/manual/en/language_grammars#naming-conventions
      */
-    public function test_check_token() {
+    public function test_check_token(): void {
         foreach (self::$testcasesctk as $expectedvalue => $tokens) {
             foreach ($tokens as $token) {
                 $result = testable_tokenizer_base::check_token($token, self::AVAILABLETOKENS);
@@ -228,7 +235,7 @@ class tokenizer_base_test extends \advanced_testcase {
     /**
      * Method to test tokenizer_base::contains_rule
      */
-    public function test_contains_rule() {
+    public function test_contains_rule(): void {
         foreach (self::$statetosearchrules as $rule) {
             $cond = testable_tokenizer_base::contains_rule(self::$statetosearchrules, $rule);
             $this->assertTrue($cond);
@@ -243,7 +250,7 @@ class tokenizer_base_test extends \advanced_testcase {
     /**
      * Method to test tokenizer_base::get_array_tokens
      */
-    public function test_get_array_tokens() {
+    public function test_get_array_tokens(): void {
         foreach (self::$testcasesgat as $expected) {
             $type = $expected['input']['type'];
             $value = $expected['input']['value'];

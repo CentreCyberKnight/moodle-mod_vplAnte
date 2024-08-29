@@ -29,61 +29,81 @@ require_once(dirname(__FILE__).'/list_util.class.php');
 require_once(dirname(__FILE__).'/vpl_submission.class.php');
 
 function get_select_instance_filter($urlbase, $instancefilter) {
-    $urls = array ();
-    $urlindex = array ();
-    $urlbase->param( 'selection', 'none' );
-    $noneurl = $urlbase->out( false );
-    $urls[$noneurl] = get_string( 'none' );
+    $urls = [];
+    $urlindex = [];
+    $urlbase->param('selection', 'none');
+    $noneurl = $urlbase->out(false);
+    $urls[$noneurl] = get_string('none');
     $urlindex['none'] = $noneurl;
-    $filter = array (
+    $filters = [
             'open',
             'closed',
             'timelimited',
             'timeunlimited',
             'automaticgrading',
             'manualgrading',
-            'examples'
-    );
-
-    foreach ($filter as $sel) {
-        $urlbase->param( 'selection', $sel );
-        $urls[$urlbase->out( false )] = get_string( $sel, VPL );
-        $urlindex[$sel] = $urlbase->out( false );
+            'examples',
+    ];
+    foreach ($filters as $sel) {
+        $urlbase->param('selection', $sel);
+        $url = $urlbase->out(false);
+        $urls[$url] = get_string($sel, VPL);
+        $urlindex[$sel] = $url;
     }
-
-    $select = new url_select( $urls, $urlindex[$instancefilter], array () );
+    if (! isset($urlindex[$instancefilter]) ) {
+        $instancefilter = 'none';
+    }
+    $select = new url_select( $urls, $urlindex[$instancefilter], []);
     $select->set_label(get_string('filter'));
     return $select;
 }
 
 function get_select_section_filter($urlbase, $sectionnames, $sectionfilter) {
-    $urls = array ();
-    $urlindex = array ();
-    $urlbase->param( 'section', 'all' );
-    $allurl = $urlbase->out( false );
-    $urls[$allurl] = get_string( 'all' );
+    $urls = [];
+    $urlindex = [];
+    $urlbase->param('section', 'all');
+    $allurl = $urlbase->out(false);
+    $urls[$allurl] = get_string('all');
     $urlindex['all'] = $allurl;
     foreach ($sectionnames as $section => $sectionname) {
-        $urlbase->param( 'section', "sec$section" );
-        $urls[$urlbase->out( false )] = s($sectionname);
-        $urlindex["sec$section"] = $urlbase->out( false );
+        $urlbase->param('section', $section);
+        $url = $urlbase->out(false);
+        $urls[$url] = $sectionname;
+        $urlindex[$section] = $url;
     }
-    $select = new url_select( $urls, $urlindex[$sectionfilter], array () );
+    if (! isset($urlindex[$sectionfilter]) ) {
+        $sectionfilter = 'all';
+    }
+    $select = new url_select( $urls, $urlindex[$sectionfilter], []);
     $select->set_label(get_string('section'));
     return $select;
 }
 
-global $COURSE, $USER, $DB, $PAGE, $OUTPUT;
+function get_select_detailedmore($urlbase, $value = '0') {
+    $urls = [];
+    $urlbase->param( 'detailedmore', '0' );
+    $urlno = $urlbase->out( false );
+    $urls[$urlno] = s(get_string('no'));
+    $urlbase->param( 'detailedmore', '1' );
+    $urlyes = $urlbase->out( false );
+    $urls[$urlyes] = s(get_string('yes'));
+    $select = new url_select( $urls, $value == '0' ? $urlno : $urlyes, []);
+    $select->set_label(get_string('detailedmore'));
+    return $select;
+}
+
+global $USER, $DB, $PAGE, $OUTPUT;
 
 $id = required_param( 'id', PARAM_INT ); // Course id.
 
-$sort = vpl_get_set_session_var( 'sort', '' );
-$sortdir = vpl_get_set_session_var( 'sortdir', 'down' );
-$instancefilter = vpl_get_set_session_var( 'selection', 'none' );
-$sectionfilter = vpl_get_set_session_var( 'section', 'all' );
+$sort = vpl_get_set_session_var('sort', '');
+$sortdir = vpl_get_set_session_var('sortdir', 'down');
+$instancefilter = vpl_get_set_session_var('selection', 'none');
+$sectionfilter = vpl_get_set_session_var('section', 'all');
+$detailedmore = vpl_get_set_session_var('detailedmore', '0');
 
 // Check course existence.
-if (! $course = $DB->get_record( "course", array ( 'id' => $id ) )) {
+if (! $course = $DB->get_record( "course", [ 'id' => $id ] )) {
     throw new moodle_exception('invalidcourseid');
 }
 require_course_login( $course );
@@ -98,46 +118,53 @@ $strstartdate .= vpl_list_util::vpl_list_arrow( $burl, 'startdate', $instancefil
 $strduedate = get_string( 'duedate', VPL ) . ' ';
 $strduedate .= vpl_list_util::vpl_list_arrow( $burl, 'duedate', $instancefilter, $sort, $sortdir );
 
-$PAGE->set_url( '/mod/vpl/index.php', array ( 'id' => $id ) );
+$PAGE->set_url( '/mod/vpl/index.php', [ 'id' => $id ] );
 $PAGE->navbar->add( $strvpls );
 $PAGE->requires->css( new moodle_url( '/mod/vpl/css/index.css' ) );
 $PAGE->set_title( $strvpls );
 $PAGE->set_heading( $course->fullname );
+$PAGE->set_pagelayout('incourse');
 echo $OUTPUT->header();
 echo $OUTPUT->heading( $strvpls );
 
-$einfo = array ( 'context' => \context_course::instance( $course->id ) );
+$einfo = ['context' => \context_course::instance( $course->id )];
 $event = \mod_vpl\event\course_module_instance_list_viewed::create( $einfo );
 $event->trigger();
 
-// Print selection by instance state.
+$urlparms = [
+    'id' => $id,
+    'sort' => $sort,
+    'sortdir' => $sortdir,
+    'section' => $sectionfilter,
+    'detailedmore' => $detailedmore,
+    'selection' => $instancefilter,
+];
 
-$urlbase = new moodle_url( '/mod/vpl/index.php', array (
-        'id' => $id,
-        'sort' => $sort,
-        'sortdir' => $sortdir
-) );
+$urlbase = new moodle_url( '/mod/vpl/index.php', $urlparms);
+
 if (method_exists('course_modinfo', 'get_array_of_activities')) { // TODO remove is not needed.
-    $activities = course_modinfo::get_array_of_activities($COURSE, true);
+    $activities = course_modinfo::get_array_of_activities($course, true);
 } else {
-    $activities = get_array_of_activities($COURSE->id);
+    $activities = get_array_of_activities($course->id);
 }
-$sectionnames = array();
+
+$sectionnames = [];
 foreach ($activities as $activity) {
     if ( $activity->mod == 'vpl' ) {
         $section = $activity->section;
-        $sectionnames[$section] = get_section_name($COURSE->id, $section);
+        $sectionnames[$section] = get_section_name($course->id, $section);
     }
 }
 
-$urlbase->param( 'selection', $instancefilter );
 echo $OUTPUT->render( get_select_section_filter($urlbase, $sectionnames, $sectionfilter) );
-$urlbase->param( 'section', $sectionfilter );
+$urlbase->params($urlparms);
 echo $OUTPUT->render( get_select_instance_filter($urlbase, $instancefilter) );
+$urlbase->params($urlparms);
+echo $OUTPUT->render( get_select_detailedmore($urlbase, $detailedmore) );
 
 $ovpls = get_all_instances_in_course( VPL, $course );
 $timenow = time();
-$vpls = array ();
+$vpls = [];
 // Get and select vpls to show.
 foreach ($ovpls as $ovpl) {
     $vpl = new mod_vpl( false, $ovpl->id );
@@ -195,7 +222,7 @@ foreach ($ovpls as $ovpl) {
                 $cmid = $vpl->get_course_module()->id;
                 if ( ! empty($activities[$cmid])) {
                     $inssection = $activities[$cmid]->section;
-                    $add = $sectionfilter == "sec$inssection";
+                    $add = $sectionfilter == "$inssection";
                 }
             }
         }
@@ -211,7 +238,8 @@ $startdate = false;
 $duedate = false;
 $nograde = true;
 foreach ($vpls as $vpl) {
-    if ($vpl->has_capability( VPL_GRADE_CAPABILITY )) {
+    if ($vpl->has_capability(VPL_GRADE_CAPABILITY) ||
+        $vpl->has_capability(VPL_MANAGE_CAPABILITY)) {
         $grader = true;
     } else if ($vpl->has_capability( VPL_SUBMIT_CAPABILITY )) {
         $student = true;
@@ -235,25 +263,22 @@ $student = $student && ! $nograde;
 if ($sort > '') {
     $corder = new vpl_list_util();
     $corder->set_order( $sort, $sortdir == 'down' );
-    usort( $vpls, array (
-            $corder,
-            'cpm'
-    ) );
+    usort($vpls, [$corder, 'cpm']);
 }
 
 // Generate table.
 $table = new html_table();
 $table->attributes['class'] = 'generaltable mod_index';
-$table->head = array (
+$table->head = [
         '#',
         $strsection,
-        $strname
-);
-$table->align = array (
+        $strname,
+];
+$table->align = [
         'left',
         'left',
-        'left'
-);
+        'left',
+];
 if ($startdate) {
     $table->head[] = $strstartdate;
     $table->align[] = 'center';
@@ -269,12 +294,16 @@ if ($grader && ! $nograde) {
     $table->align[] = 'right';
 }
 if ($student && ! $nograde) {
-    $table->head[] = get_string( 'grade', 'core_grades' );
+    $table->head[] = get_string(vpl_get_gradenoun_str());
+    $table->align[] = 'left';
+}
+if ($detailedmore) {
+    $table->head[] = get_string( 'detailedmore' );
     $table->align[] = 'left';
 }
 
-$baseurlsection = vpl_abs_href( '/course/view.php', 'id', $COURSE->id );
-$table->data = array ();
+$baseurlsection = vpl_abs_href( '/course/view.php', 'id', $course->id );
+$table->data = [];
 $totalsubs = 0;
 $totalgraded = 0;
 foreach ($vpls as $vpl) {
@@ -285,13 +314,13 @@ foreach ($vpls as $vpl) {
     $section = '';
     if ( ! empty($activities[$cmid])) {
         $section = $activities[$cmid]->section;
-        $sectionname = s( $sectionnames[$section] );
+        $sectionname = $sectionnames[$section];
     }
-    $row = array (
+    $row = [
             count( $table->data ) + 1,
             "<a href='$baseurlsection#section-$section'>{$sectionname}</a>",
-            "<a href='$url'>{$vpl->get_printable_name()}</a>"
-    );
+            "<a href='$url'>{$vpl->get_printable_name()}</a>",
+    ];
     if ($startdate) {
         $row[] = $instance->startdate > 0 ? userdate( $instance->startdate ) : '';
     }
@@ -357,10 +386,13 @@ foreach ($vpls as $vpl) {
             $row[] = '-';
         }
     }
+    if ($detailedmore) {
+        $row[] = $vpl->str_submission_restriction();
+    }
     $table->data[] = $row;
 }
 if ($totalsubs > 0) {
-    $row = array ('', '', '');
+    $row = ['', '', ''];
     if ($startdate) {
         $row[] = '';
     }
@@ -371,13 +403,18 @@ if ($totalsubs > 0) {
     $row[key( $row )] = get_string( 'total' );
     $row[] = $totalsubs;
     $row[] = $totalgraded;
+    if ($detailedmore) {
+        $row[] = '';
+    }
     $table->data[] = $row;
 }
 echo "<br>";
 echo html_writer::table( $table );
 
-$url = new moodle_url( '/mod/vpl/views/checkvpls.php', array ('id' => $id) );
-$string = get_string( 'checkall' );
-echo html_writer::link($url, $string, array('class' => 'btn btn-secondary'));
+if (is_siteadmin() || has_capability(VPL_MANAGE_CAPABILITY, $einfo['context'])) {
+    $url = new moodle_url( '/mod/vpl/views/checkvpls.php', ['id' => $id] );
+    $string = get_string( 'checkall' );
+    echo html_writer::link($url, $string, ['class' => 'btn btn-secondary']);
+}
 
 echo $OUTPUT->footer();

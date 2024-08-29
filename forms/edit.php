@@ -35,7 +35,7 @@ $userid = optional_param('userid', false, PARAM_INT);
 $copy = optional_param('privatecopy', false, PARAM_INT);
 $subid = optional_param( 'submissionid', false, PARAM_INT );
 $vpl = new mod_vpl($id);
-$pageparms = array('id' => $id);
+$pageparms = ['id' => $id];
 if ($userid && ! $copy) {
     $pageparms['userid'] = $userid;
 }
@@ -46,10 +46,7 @@ if ($subid) {
     $pageparms['submissionid'] = $subid;
 }
 $vpl->prepare_page( 'forms/edit.php', $pageparms );
-if (! $vpl->is_visible()) {
-    vpl_redirect('?id=' . $id, get_string( 'notavailable' ), 'error' );
-}
-if (! $vpl->is_submit_able()) {
+if (! $vpl->is_visible() || ! $vpl->is_submit_able()) {
     vpl_redirect('?id=' . $id, get_string( 'notavailable' ), 'error' );
 }
 if (! $userid || $userid == $USER->id) { // Edit own submission.
@@ -58,6 +55,7 @@ if (! $userid || $userid == $USER->id) { // Edit own submission.
 } else { // Edit other user submission.
     $vpl->require_capability( VPL_GRADE_CAPABILITY );
 }
+
 $vpl->restrictions_check();
 
 $instance = $vpl->get_instance();
@@ -66,11 +64,11 @@ $grader = $vpl->has_capability(VPL_GRADE_CAPABILITY);
 
 // This code allow to edit previous versions.
 if ($subid && $grader) {
-    $parms = array (
+    $parms = [
             'id' => $subid,
             'vpl' => $instance->id,
-            'userid' => $userid
-    );
+            'userid' => $userid,
+    ];
     $res = $DB->get_records( 'vpl_submissions', $parms );
     if (count( $res ) == 1) {
         $lastsub = $res[$subid];
@@ -80,7 +78,7 @@ if ($subid && $grader) {
 } else {
     $lastsub = $vpl->last_user_submission( $userid );
 }
-$options = Array();
+$options = [];
 $options['id'] = $id;
 $options['restrictededitor'] = $instance->restrictededitor && ! $grader;
 $options['save'] = ! $instance->example;
@@ -89,7 +87,7 @@ $options['debug'] = ($instance->debug || $grader);
 $options['evaluate'] = ($instance->evaluate || $grader);
 $options['example'] = true && $instance->example;
 $options['comments'] = ! $options['example'];
-$options['username'] = $vpl->fullname($DB->get_record( 'user', array ( 'id' => $userid ) ), false);
+$options['username'] = $vpl->fullname($DB->get_record( 'user', [ 'id' => $userid ] ), false);
 $linkuserid = $copy ? $USER->id : $userid;
 $ajaxurl = "edit.json.php?id={$id}&userid={$linkuserid}";
 $options['ajaxurl'] = $ajaxurl . '&action=';
@@ -119,6 +117,7 @@ $options['minfiles'] = count( $reqfilelist );
 if ($options['example']) {
     $options['maxfiles'] = $options['minfiles'];
 }
+$options['readOnlyFiles'] = $vpl->get_readonly_files();
 $options['saved'] = $lastsub && ! $copy;
 if ($lastsub) {
     $submission = new mod_vpl_submission( $vpl, $lastsub );
@@ -128,12 +127,12 @@ if ($lastsub) {
 if ($copy && $grader) {
     $userid = $USER->id;
 }
-vpl_editor_util::generate_requires($vpl, $options);
+vpl_editor_util::generate_jquery();
 $vpl->print_header( get_string( 'edit', VPL ) );
 $vpl->print_view_tabs( basename( __FILE__ ) );
-
 vpl_editor_util::print_tag();
 vpl_editor_util::print_js_i18n();
 vpl_editor_util::print_js_description($vpl, $userid);
-
+vpl_editor_util::generate_requires($vpl, $options);
 $vpl->print_footer();
+

@@ -37,6 +37,7 @@ class vpl_tokenizer_matlab extends vpl_tokenizer_base {
     protected static $creserved = null;
     protected $linenumber;
     protected $tokens;
+    protected $stringdelimiter;
     protected function is_indentifier($text) {
         if (strlen( $text ) == 0) {
             return false;
@@ -79,7 +80,7 @@ class vpl_tokenizer_matlab extends vpl_tokenizer_base {
     }
     public function __construct() {
         if (self::$creserved === null) {
-            self::$creserved = array ( // Source MATLAB Quick Reference Author: Jialong He.
+            self::$creserved = [ // Source MATLAB Quick Reference Author: Jialong He.
                     /* Managing Commands and Functions. */
                     "addpath" => true,
                     "doc" => true,
@@ -184,13 +185,13 @@ class vpl_tokenizer_matlab extends vpl_tokenizer_base {
                     /* Operators. */
                     "kron" => true,
                     "xor" => true,
-                    "and" => true
-            );
+                    "and" => true,
+            ];
         }
         $this->reserved = &self::$creserved;
     }
     public function parse($filedata) {
-        $this->tokens = array ();
+        $this->tokens = [];
         $state = self::REGULAR;
         $pending = '';
         $lastnospace = self::LF;
@@ -239,11 +240,11 @@ class vpl_tokenizer_matlab extends vpl_tokenizer_base {
                     break;
                 case self::IN_STRING :
                     // Check end of string.
-                    if ($current == $this->string_delimiter && $next == $this->string_delimiter) {
+                    if ($current == $this->stringdelimiter && $next == $this->stringdelimiter) {
                         $i ++;
-                    } else if ($this->string_delimiter == '"' && $current == '\\') {
+                    } else if ($this->stringdelimiter == '"' && $current == '\\') {
                         $i ++;
-                    } else if ($this->string_delimiter == $current) {
+                    } else if ($this->stringdelimiter == $current) {
                         $lastnospace = $current;
                         $pending = '';
                         $state = self::REGULAR;
@@ -277,7 +278,7 @@ class vpl_tokenizer_matlab extends vpl_tokenizer_base {
                         break 2;
                     } else if ($current == '"') {
                         $state = self::IN_STRING;
-                        $this->string_delimiter = '"';
+                        $this->stringdelimiter = '"';
                         $this->add_pending( $pending );
                         $pending = '""';
                         $this->add_pending( $pending );
@@ -285,7 +286,7 @@ class vpl_tokenizer_matlab extends vpl_tokenizer_base {
                     } else if ($current == "'" && ($lastnospace == self::LF
                             || $lastnospace == '' || strpos( "[,;'(=", $lastnospace ) !== false)) {
                         $state = self::IN_STRING;
-                        $this->string_delimiter = "'";
+                        $this->stringdelimiter = "'";
                         $this->add_pending( $pending );
                         $pending = "''";
                         $this->add_pending( $pending );
@@ -318,7 +319,7 @@ class vpl_tokenizer_matlab extends vpl_tokenizer_base {
         return $this->tokens;
     }
     protected function compact_operators() {
-        $correct = array ();
+        $correct = [];
         $current = false;
         foreach ($this->tokens as &$next) {
             if ($current) {

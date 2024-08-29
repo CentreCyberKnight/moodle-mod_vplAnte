@@ -38,14 +38,14 @@ $userid = optional_param( 'userid', false, PARAM_INT );
 
 $vpl = new mod_vpl( $id );
 if ($userid) {
-    $vpl->prepare_page( 'forms/submissionview.php', array (
+    $vpl->prepare_page( 'forms/submissionview.php', [
             'id' => $id,
-            'userid' => $userid
-    ) );
+            'userid' => $userid,
+    ] );
 } else {
-    $vpl->prepare_page( 'forms/submissionview.php', array (
-            'id' => $id
-    ) );
+    $vpl->prepare_page( 'forms/submissionview.php', [
+            'id' => $id,
+    ] );
 }
 if (! $vpl->is_visible()) {
     \mod_vpl\event\vpl_security::log( $vpl );
@@ -58,10 +58,10 @@ if ($userid && $userid != $USER->id) {
     // Grader.
     $vpl->require_capability( VPL_GRADE_CAPABILITY );
     if ($submissionid) {
-        $subinstance = $DB->get_record( 'vpl_submissions', array (
+        $subinstance = $DB->get_record( 'vpl_submissions', [
             'id' => $submissionid,
-            'vpl' => $vpl->get_instance()->id
-        ) );
+            'vpl' => $vpl->get_instance()->id,
+        ] );
     } else {
         $subinstance = $vpl->last_user_submission( $userid );
     }
@@ -70,10 +70,10 @@ if ($userid && $userid != $USER->id) {
     $vpl->require_capability( VPL_VIEW_CAPABILITY );
     $userid = $USER->id;
     if ($submissionid && $vpl->has_capability( VPL_GRADE_CAPABILITY )) {
-        $subinstance = $DB->get_record( 'vpl_submissions', array (
+        $subinstance = $DB->get_record( 'vpl_submissions', [
             'id' => $submissionid,
             'vpl' => $vpl->get_instance()->id,
-        ) );
+        ] );
     } else {
         $subinstance = $vpl->last_user_submission( $userid );
     }
@@ -101,7 +101,7 @@ if (! $subinstance) {
 $submissionid = $subinstance->id;
 
 if ($vpl->get_instance()->id != $subinstance->vpl) {
-    throw new moodle_exception('error:inconsistency', 'mod_vpl', 'vpl_submission');
+    throw new moodle_exception('error:inconsistency', 'mod_vpl', '', 'vpl_submission');
 }
 
 // Display submission.
@@ -110,7 +110,7 @@ $submission = new mod_vpl_submission( $vpl, $subinstance );
 
 if ($vpl->get_visiblegrade() || $vpl->has_capability( VPL_GRADE_CAPABILITY )) {
     if ($submission->is_graded()) {
-        echo '<h2>' . get_string( 'grade', 'core_grades' ) . '</h2>';
+        echo '<h2>' . get_string(vpl_get_gradenoun_str()) . '</h2>';
         $submission->print_grade( true );
         \mod_vpl\event\submission_grade_viewed::log($submission);
     }

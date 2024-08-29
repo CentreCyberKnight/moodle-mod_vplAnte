@@ -25,7 +25,7 @@
 
 namespace mod_vpl;
 
-use \Exception;
+use Exception;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -41,7 +41,7 @@ class locallib_test extends \advanced_testcase {
     /**
      * @covers \vpl_delete_dir
      */
-    public function test_vpl_delete_dir() {
+    public function test_vpl_delete_dir(): void {
         global $CFG;
         $text = 'Example text';
         $testdir = $CFG->dataroot . '/temp/vpl_test/tmp';
@@ -80,7 +80,7 @@ class locallib_test extends \advanced_testcase {
     /**
      * @covers \vpl_fopen
      */
-    public function test_vpl_fopen() {
+    public function test_vpl_fopen(): void {
         global $CFG;
         $testdir = $CFG->dataroot . '/temp/vpl_test/tmp';
         $text = 'Any thing is ok! 뭐든 괜찮아!';
@@ -96,7 +96,7 @@ class locallib_test extends \advanced_testcase {
             } else {
                 $chmodusefull = true;
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $chmodusefull = false;
         }
         chmod($fpath, 0777);
@@ -105,7 +105,7 @@ class locallib_test extends \advanced_testcase {
             try {
                 $throwexception = false;
                 $this->internal_test_vpl_fopen($bad);
-            } catch (Exception $e) {
+            } catch (\Throwable $e) {
                 $throwexception = true;
             }
             $this->assertTrue($throwexception, 'Exception expected');
@@ -124,7 +124,7 @@ class locallib_test extends \advanced_testcase {
             try {
                 $throwexception = false;
                 vpl_fwrite($fpath, $text);
-            } catch (Exception $e) {
+            } catch (\Throwable $e) {
                 $throwexception = true;
             }
             chmod($testdir, 0777);
@@ -137,7 +137,7 @@ class locallib_test extends \advanced_testcase {
      * @covers \vpl_get_array_key
      */
     public function tes_vpl_get_array_key() {
-        $array = array(0 => 'nothing', 1 => 'a', 2 => 'b', 5 => 'c', 1200 => 'd', 1500 => 'f');
+        $array = [0 => 'nothing', 1 => 'a', 2 => 'b', 5 => 'c', 1200 => 'd', 1500 => 'f'];
         $this->assertEquals(1, vpl_get_array_key($array, 1));
         $this->assertEquals(2, vpl_get_array_key($array, 2));
         $this->assertEquals(5, vpl_get_array_key($array, 3));
@@ -153,7 +153,7 @@ class locallib_test extends \advanced_testcase {
     /**
      * @covers \vpl_fwrite
      */
-    public function test_vpl_fwrite() {
+    public function test_vpl_fwrite(): void {
         global $CFG;
         $text = 'Example text';
         $otext = 'Other text';
@@ -174,7 +174,7 @@ class locallib_test extends \advanced_testcase {
             } else {
                 $chmodusefull = true;
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             $chmodusefull = false;
         }
         chmod($fpath, 0777);
@@ -193,7 +193,7 @@ class locallib_test extends \advanced_testcase {
             try {
                 $throwexception = false;
                 vpl_fwrite($fpath, $text);
-            } catch (Exception $e) {
+            } catch (\Throwable $e) {
                 $throwexception = true;
             }
             $this->assertTrue($throwexception, 'Exception expected');
@@ -208,7 +208,7 @@ class locallib_test extends \advanced_testcase {
             try {
                 $throwexception = false;
                 vpl_fwrite($fpath, $text);
-            } catch (Exception $e) {
+            } catch (\Throwable $e) {
                 $throwexception = true;
             }
             chmod($testdir, 0777);
@@ -220,7 +220,7 @@ class locallib_test extends \advanced_testcase {
     /**
      * @covers \vpl_get_set_session_var
      */
-    public function test_vpl_get_set_session_var() {
+    public function test_vpl_get_set_session_var(): void {
         global $SESSION;
         $nosession = false;
         $nopost = false;
@@ -259,7 +259,7 @@ class locallib_test extends \advanced_testcase {
     /**
      * @covers \vpl_is_image
      */
-    public function test_vpl_is_image() {
+    public function test_vpl_is_image(): void {
         $this->assertTrue(vpl_is_image('filename.gif'));
         $this->assertTrue(vpl_is_image('filename.jpg'));
         $this->assertTrue(vpl_is_image('filename.jpeg'));
@@ -279,7 +279,7 @@ class locallib_test extends \advanced_testcase {
     /**
      * @covers \vpl_truncate_string
      */
-    public function test_vpl_truncate_string() {
+    public function test_vpl_truncate_string(): void {
         $var = 'testvpl3';
         vpl_truncate_string($var, 3);
         $this->assertEquals('...', $var);
@@ -303,17 +303,19 @@ class locallib_test extends \advanced_testcase {
     /**
      * @covers \vpl_bash_export
      */
-    public function test_vpl_bash_export() {
+    public function test_vpl_bash_export(): void {
         $this->assertEquals("export VPL=3\n", vpl_bash_export('VPL', 3));
-        $this->assertEquals("export ALGO='text'\n", vpl_bash_export('ALGO', 'text'));
-        $this->assertEquals("export ALGO='te\" \$xt'\n", vpl_bash_export('ALGO', 'te" $xt'));
-        $this->assertEquals("export ALGO='te'\"'\"''\"'\"'xt'\"'\"''\n", vpl_bash_export('ALGO', "te''xt'"));
+        $this->assertEquals("export ALGO=\"text\"\n", vpl_bash_export('ALGO', 'text'));
+        $this->assertEquals("export ALGO=\"te\\\" \$'xt\"\n", vpl_bash_export('ALGO', 'te" $\'xt'));
+        $this->assertEquals("export ALGO=\"te''xt'\"\n", vpl_bash_export('ALGO', "te''xt'"));
+        $res = vpl_bash_export('a', [ "te''xt'", 'te" $\'xt']);
+        $this->assertEquals("export a=( \"te''xt'\" \"te\\\" \$'xt\" )\n", $res);
     }
 
     /**
      * @covers \vpl_is_valid_file_name
      */
-    public function test_vpl_is_valid_file_name() {
+    public function test_vpl_is_valid_file_name(): void {
         $this->assertTrue(vpl_is_valid_file_name('filename.PNG.png'));
         $this->assertTrue(vpl_is_valid_file_name('filename kjhfs adkjhkafs fdj kfsdhahfskdh'));
         $this->assertTrue(vpl_is_valid_file_name('f'));
@@ -329,27 +331,5 @@ class locallib_test extends \advanced_testcase {
         $this->assertFalse(vpl_is_valid_file_name('a/b'));
         $this->assertFalse(vpl_is_valid_file_name('a\b'));
         $this->assertFalse(vpl_is_valid_file_name('\.'));
-    }
-
-    /**
-     * @covers \vpl_check_network
-     */
-    public function test_vpl_check_network() {
-        // Tests exact IPs.
-        $this->assertTrue(vpl_check_network('1.2.3.4', '1.2.3.4'));
-        $this->assertFalse(vpl_check_network('199.193.245.44', '199.193.245.4'));
-        $this->assertTrue(vpl_check_network('1.2.3.4, 199.193.245.44', '199.193.245.44'));
-        $this->assertTrue(vpl_check_network('1.2.3.4, 199.193.245.44', '1.2.3.4'));
-        $this->assertFalse(vpl_check_network('1.2.3.4, 199.193.245.44', '1.2.3.41'));
-        $this->assertTrue(vpl_check_network('1.2.3.4, 199.193.245.44, 77.77.88.99', '77.77.88.99'));
-        $this->assertTrue(vpl_check_network('1.2.3.4, 199.193.245.44, 77.77.88.99', '199.193.245.44'));
-        // Tests subnets.
-        $this->assertTrue(vpl_check_network('1.2.3', '1.2.3.4'));
-        $this->assertFalse(vpl_check_network('199.193', '199.194.245.4'));
-        $this->assertTrue(vpl_check_network('1.2, 199.193.245.', '199.193.245.44'));
-        $this->assertTrue(vpl_check_network('1.2, 199.193.245.44', '1.2.3.4'));
-        $this->assertFalse(vpl_check_network('1.2.3., 199.193.245.44', '1.2.33.4'));
-        $this->assertTrue(vpl_check_network('1.2.3, 199.193.245.44, 77.', '77.77.88.99'));
-        $this->assertTrue(vpl_check_network('1.2.3.4, 199., 77.77.88.99', '199.193.245.44'));
     }
 }

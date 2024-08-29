@@ -32,13 +32,13 @@ $id = required_param( 'id', PARAM_INT );
 
 $vpl = new mod_vpl( $id );
 
-$vpl->prepare_page( 'forms/testcasesfile.php', array (
-        'id' => $id
-) );
+$vpl->prepare_page( 'forms/testcasesfile.php', [
+        'id' => $id,
+] );
 
 $vpl->require_capability( VPL_MANAGE_CAPABILITY );
 
-$options = array ();
+$options = [];
 $options['restrictededitor'] = false;
 $options['save'] = true;
 $options['run'] = false;
@@ -50,12 +50,15 @@ $options['resetfiles'] = false;
 $options['minfiles'] = 1;
 $options['maxfiles'] = 1;
 $options['saved'] = true;
+$options['readOnlyFiles'] = [];
 
 vpl_editor_util::generate_requires($vpl, $options);
+
 $vpl->print_header( get_string( 'testcases', VPL ) );
 $vpl->print_heading_with_help( 'testcases' );
 
 vpl_editor_util::print_tag();
 vpl_editor_util::print_js_i18n();
+vpl_editor_util::print_js_description($vpl, $USER->id);
 
 $vpl->print_footer_simple();

@@ -51,6 +51,24 @@ class behat_mod_vpl extends behat_base {
     }
 
     /**
+     * Open a new activity in section i of type vpl
+     *
+     * @Given /^I open a new activity in section "([^"]*)" of type VPL$/
+     * @param string $section
+     * @return void
+     */
+    public function i_open_a_new_activity_in_section_of_type_vpl($section) {
+        $script = "(function() {
+        var section='$section';
+        section = section.replace('\"','').replace(' ','');
+        var urlpattern = /(.*\\/course\\/)view\\.php\\?id=([0-9]*)/;
+        var urlreplacement = '$1modedit.php?add=vpl&type&course=$2&section=' + section;
+        window.location.href = window.location.href.replace(urlpattern, urlreplacement);
+        })();";
+        $this->getSession()->evaluateScript($script);
+    }
+
+    /**
      * Accept confirm popup
      *
      * @Given /^I accept confirm in VPL$/
@@ -70,11 +88,11 @@ class behat_mod_vpl extends behat_base {
      */
     protected function generate_drop_file($filename, $contents, $target) {
         $ext = pathinfo( $filename, PATHINFO_EXTENSION );
-        $binarytypes = array('application/zip' => 'zip',
+        $binarytypes = ['application/zip' => 'zip',
                             'application/pdf' => 'pdf',
                             'image/png' => 'png',
-                            'image/jpg' => 'jpg'
-                         );
+                            'image/jpg' => 'jpg',
+                         ];
         $type = array_search($ext, $binarytypes);
         $script = "(function() {";
         if ( $type === false ) {
@@ -108,6 +126,7 @@ class behat_mod_vpl extends behat_base {
      */
     public function i_drop_the_file_contening_on_in_vpl($filename, $contents, $selector) {
         // Testing framework does not accept heredoc syntax.
+        $contents = str_replace("\\n", "\n", $contents);
         $scriptfile = $this->generate_drop_file($filename, $contents, 'file');
         $script = "(function() {
             var file;

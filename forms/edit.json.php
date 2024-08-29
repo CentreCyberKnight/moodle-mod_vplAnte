@@ -47,10 +47,10 @@ try {
     // TODO use or not sesskey."require_sesskey();".
     require_login( $vpl->get_course(), false );
 
-    $PAGE->set_url( new moodle_url( '/mod/vpl/forms/edit.json.php', array (
+    $PAGE->set_url( new moodle_url( '/mod/vpl/forms/edit.json.php', [
             'id' => $id,
-            'action' => $action
-    ) ) );
+            'action' => $action,
+    ] ) );
     echo $OUTPUT->header(); // Send headers.
     $rawdata = file_get_contents( "php://input" );
     $rawdatasize = strlen( $rawdata );
@@ -149,7 +149,7 @@ try {
             $result->response->timeLeft = $timeleft;
         }
     }
-} catch ( Exception $e ) {
+} catch (\Throwable $e) {
     $result->success = false;
     $result->error = $e->getMessage();
 }

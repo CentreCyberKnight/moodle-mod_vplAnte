@@ -44,33 +44,39 @@ function vpl_grade_item_update($instance, $grades=null) {
     global $CFG;
     require_once($CFG->libdir.'/gradelib.php');
 
-    $itemdetails = array('itemname' => $instance->name);
-    $itemdetails['hidden'] = ($instance->visiblegrade > 0) ? 0 : 1;
-    if ( isset($instance->cmidnumber) ) {
-        $itemdetails['idnumber'] = $instance->cmidnumber;
+    $params = [];
+    $params['itemname'] = $instance->name;
+    $params['hidden'] = ($instance->visiblegrade > 0) ? 0 : 1;
+    if ( isset($instance->cmidnumber)) {
+        $params['idnumber'] = $instance->cmidnumber;
     }
     if ($instance->grade == 0 || $instance->example != 0) {
-        $itemdetails['gradetype'] = GRADE_TYPE_NONE;
-        $itemdetails['deleted'] = 1;
+        $params['gradetype'] = GRADE_TYPE_NONE;
+        $params['deleted'] = true;
     } else if ($instance->grade > 0) {
-        $itemdetails['gradetype'] = GRADE_TYPE_VALUE;
-        $itemdetails['grademax']  = $instance->grade;
-        $itemdetails['grademin']  = 0; // I don't know if this is correct updating.
+        $params['gradetype'] = GRADE_TYPE_VALUE;
+        $params['grademax']  = $instance->grade;
+        $params['grademin']  = 0;
 
     } else {
-        $itemdetails['gradetype'] = GRADE_TYPE_SCALE;
-        $itemdetails['scaleid']   = -$instance->grade;
-
+        $params['gradetype'] = GRADE_TYPE_SCALE;
+        $params['scaleid']   = -$instance->grade;
     }
 
     if ($grades === 'reset') {
-        $itemdetails['reset'] = true;
+        $params['reset'] = true;
         $grades = null;
     }
 
     return grade_update(
-        'mod/vpl', $instance->course, 'mod', 'vpl',
-        $instance->id, 0, $grades, $itemdetails
+        'mod/vpl',
+        $instance->course,
+        'mod',
+        VPL,
+        $instance->id,
+        0,
+        $grades,
+        $params
     );
 }
 
@@ -89,6 +95,13 @@ function vpl_update_grades($instance, $userid=0, $nullifnone=true) {
     require_once($CFG->libdir.'/gradelib.php');
     require_once(dirname( __FILE__ ) . '/vpl_submission_CE.class.php');
 
+    if (! isset($instance->cmidnumber)) {
+        if ($cm = get_coursemodule_from_id(VPL, $instance->coursemodule)) {
+            $instance = clone $instance;
+            $instance->cmidnumber = $cm->idnumber;
+        }
+    }
+
     if ($instance->grade == 0) {
         return vpl_grade_item_update($instance);
     } else if ($userid == 0) {
@@ -99,12 +112,12 @@ function vpl_update_grades($instance, $userid=0, $nullifnone=true) {
         $vpl = new mod_vpl( false, $instance->id);
         $sub = $vpl->last_user_submission($userid);
         if ($sub === false) {
-            $subs = array();
+            $subs = [];
         } else {
-            $subs = array($sub);
+            $subs = [$sub];
         }
     }
-    $grades = array();
+    $grades = [];
     foreach ($subs as $sub) {
         if ($sub->dategraded > 0) {
             $subc = new mod_vpl_submission_CE($vpl, $sub);
@@ -126,7 +139,6 @@ function vpl_update_grades($instance, $userid=0, $nullifnone=true) {
     }
     return vpl_grade_item_update($instance, $grades);
 }
-
 /**
  * Deletes grade_item from a vpl instance+id
  *
@@ -135,10 +147,9 @@ function vpl_update_grades($instance, $userid=0, $nullifnone=true) {
 function vpl_delete_grade_item($instance) {
     global $CFG;
     require_once($CFG->libdir . '/gradelib.php');
-    $itemdetails = array ( 'deleted' => 1 );
-    grade_update( 'mod/vpl', $instance->course, 'mod', VPL, $instance->id, 0, null, $itemdetails );
+    $itemdetails = [ 'deleted' => 1 ];
+    grade_update('mod/vpl', $instance->course, 'mod', VPL, $instance->id, 0, null, $itemdetails );
 }
-
 /**
  * Creates an event object from a vpl instance+id
  *
@@ -166,14 +177,15 @@ function vpl_create_event($instance, $id) {
 }
 
 /**
- * Callback function to determine if the event is visible for the current user.
+ * Callback function to determine if the event is visible for the $userid or current user.
  *
  * @param calendar_event $event
+ * @param int $userid optional.
  * @return bool Returns true if the event is visible, false if not visible.
  */
-function mod_vpl_core_calendar_is_event_visible(calendar_event $event) {
+function mod_vpl_core_calendar_is_event_visible(calendar_event $event, $userid = false) {
     $vpl = new mod_vpl(null, $event->instance);
-    return $vpl->is_visible();
+    return $vpl->is_visible($userid);
 }
 
 /**
@@ -181,16 +193,38 @@ function mod_vpl_core_calendar_is_event_visible(calendar_event $event) {
  *
  * @param calendar_event $event
  * @param \core_calendar\action_factory $factory objet to generate the action
+ * @param int $userid (optional) User id for checking capabilities, etc.
  * @return \core_calendar\action_factory|null The action object or null
  */
 function mod_vpl_core_calendar_provide_event_action(calendar_event $event,
-                                                    \core_calendar\action_factory $factory) {
+                                                    \core_calendar\action_factory $factory,
+                                                    $userid = 0) {
+    global $USER;
+    if ($userid == 0) {
+        $userid = $USER->id;
+    }
     $vpl = new mod_vpl(null, $event->instance);
-    if ($vpl->is_visible()) {
-        $text = get_string('dueeventaction', VPL);
-        $cmid = $vpl->get_course_module()->id;
-        $link = new \moodle_url('/mod/vpl/forms/edit.php', ['id' => $cmid]);
-        return $factory->create_instance($text, $link, 1, $vpl->is_submit_able());
+    $vplduedate = $vpl->get_effective_setting('duedate', $userid);
+    $showdue = 60 * 60 * 12; // Half day.
+    if ($vplduedate > 0 && (($vplduedate + $showdue) < time())) {
+        return null;
+    }
+    if ($vpl->is_visible($userid)) {
+        if ($vpl->has_capability(VPL_GRADE_CAPABILITY)) {
+            $text = get_string('submissionslist', VPL);
+            $cmid = $vpl->get_course_module()->id;
+            $link = new \moodle_url('/mod/vpl/views/submissionslist.php', ['id' => $cmid]);
+            return $factory->create_instance($text, $link, 1, true);
+        } else {
+            if ($vpl->last_user_submission( $userid ) !== false) {
+                return null;
+            } else {
+                $text = get_string('dueeventaction', VPL);
+                $cmid = $vpl->get_course_module()->id;
+                $link = new \moodle_url('/mod/vpl/forms/edit.php', ['id' => $cmid]);
+                return $factory->create_instance($text, $link, 1, $vpl->is_submit_able());
+            }
+        }
     } else {
         return null;
     }
@@ -215,7 +249,6 @@ function mod_vpl_core_calendar_event_action_shows_item_count(calendar_event $eve
  * @return lang_string The event type lang string.
  */
 function mod_vpl_core_calendar_get_event_action_string(string $eventtype): string {
-
     if ($eventtype == VPL_EVENT_TYPE_DUE) {
         return get_string('calendardue', VPL);
     } else { // Must be an event of type submission expected on.
@@ -264,7 +297,7 @@ function vpl_update_instance_event($instance) {
         'modulename' => VPL,
         'instance' => $instance->id,
         'eventtype' => VPL_EVENT_TYPE_DUE,
-        'priority' => null
+        'priority' => null,
     ];
     if ($eventid = $DB->get_field( 'event', 'id', $searchfields)) {
         $event->id = $eventid;
@@ -293,11 +326,12 @@ function vpl_update_instance($instance) {
     $instance->id = $instance->instance;
     vpl_update_instance_event($instance);
     $cm = get_coursemodule_from_instance( VPL, $instance->id, $instance->course );
-    $instance->cmidnumber = $cm->id;
+    if (!isset($instance->cmidnumber)) {
+        $instance->cmidnumber = $cm->idnumber;
+    }
     vpl_grade_item_update( $instance );
     $completionexpected = (!empty($instance->completionexpected)) ? $instance->completionexpected : null;
-    \core_completion\api::update_completion_date_event($instance->cmidnumber, 'vpl', $instance, $completionexpected);
-
+    \core_completion\api::update_completion_date_event($cm->id, 'vpl', $instance, $completionexpected);
     return $DB->update_record( VPL, $instance );
 }
 
@@ -310,7 +344,7 @@ function vpl_update_instance($instance) {
 function vpl_delete_instance( $id ) {
     global $DB, $CFG;
 
-    $instance = $DB->get_record( VPL, array ( "id" => $id ) );
+    $instance = $DB->get_record(VPL, ["id" => $id]);
     if ( $instance === false ) {
         return false;
     }
@@ -322,11 +356,7 @@ function vpl_delete_instance( $id ) {
     vpl_delete_grade_item( $instance );
 
     // Delete relate event.
-    $DB->delete_records( 'event',
-            array (
-                    'modulename' => VPL,
-                    'instance' => $id
-            ) );
+    $DB->delete_records('event', ['modulename' => VPL, 'instance' => $id]);
 
     // Delete all related records.
     $tables = [
@@ -334,21 +364,15 @@ function vpl_delete_instance( $id ) {
             VPL_VARIATIONS,
             VPL_ASSIGNED_VARIATIONS,
             VPL_OVERRIDES,
-            VPL_ASSIGNED_OVERRIDES
+            VPL_ASSIGNED_OVERRIDES,
     ];
     foreach ($tables as $table) {
-        $DB->delete_records( $table, array ('vpl' => $id) );
+        $DB->delete_records($table, ['vpl' => $id]);
     }
 
-    // Reset basedon $id to 0.
-    $resetbasedon = 'UPDATE {vpl}
-                         set basedon = 0
-                         WHERE basedon = :vplid';
-    $DB->execute($resetbasedon, array ( 'vplid' => $id ));
-
     // Delete vpl record.
-    $DB->delete_records( VPL, array ( 'id' => $id ) );
-
+    $DB->delete_records( VPL, ['id' => $id] );
+    mod_vpl::reset_db_cache(VPL, $id);
     return true;
 }
 
@@ -414,7 +438,7 @@ function vpl_user_outline($course, $user, $mod, $instance) {
             $info = get_string( 'submission', VPL, count( $subs ) );
         }
         if ($subinstance->dategraded) {
-            $info .= '<br>' . get_string( 'grade', 'core_grades' ) . ': ' . $submission->get_grade_core();
+            $info .= '<br>' . get_string(vpl_get_gradenoun_str()) . ': ' . $submission->get_grade_core();
         }
         $url = vpl_mod_href( 'forms/submissionview.php', 'id', $vpl->get_course_module()->id, 'userid', $user->id );
         $return->info = '<a href="' . $url . '">' . $info . '</a>';
@@ -434,6 +458,7 @@ function vpl_user_complete($course, $user, $mod, $vpl) {
     $vpl = new mod_vpl( null, $vpl->id );
     $sub = $vpl->last_user_submission( $user->id );
     if ($sub !== false) {
+        require_once(dirname( __FILE__ ) . '/vpl_submission_CE.class.php');
         $submission = new mod_vpl_submission( $vpl, $sub );
         $submission->print_info( true );
         $submission->print_grade( true );
@@ -458,7 +483,7 @@ function vpl_get_recent_mod_activity(&$activities, &$index, $timestart, $coursei
     }
     $select = 'select * from {vpl_submissions} subs';
     $where = ' where (subs.vpl = :vplid) and ((subs.datesubmitted >= :timestartsub) or (subs.dategraded >= :timestartgrade))';
-    $parms = array ( 'vplid' => $vplid, 'timestartsub' => $timestart, 'timestartgrade' => $timestart);
+    $parms = [ 'vplid' => $vplid, 'timestartsub' => $timestart, 'timestartgrade' => $timestart];
     if (! $grader || ($userid != 0)) { // User activity.
         if ( ! $grader ) {
             $userid = $USER->id;
@@ -475,7 +500,7 @@ function vpl_get_recent_mod_activity(&$activities, &$index, $timestart, $coursei
     $subs = $DB->get_records_sql( $select . $where , $parms);
     if ($grader) {
         require_once($CFG->libdir.'/gradelib.php');
-        $userids = array();
+        $userids = [];
         foreach ($subs as $sub) {
             $userids[] = $sub->userid;
         }
@@ -493,7 +518,7 @@ function vpl_get_recent_mod_activity(&$activities, &$index, $timestart, $coursei
         if ($grader && isset($grades->items[0]) && isset($grades->items[0]->grades[$sub->userid])) {
             $activity->grade = $grades->items[0]->grades[$sub->userid]->str_long_grade;
         }
-        $activity->user = $DB->get_record( 'user', array ( 'id' => $sub->userid ) );
+        $activity->user = $DB->get_record( 'user', [ 'id' => $sub->userid ] );
         $activities[$index ++] = $activity;
     }
     return true;
@@ -520,8 +545,7 @@ function vpl_print_recent_mod_activity($activity, $courseid, $detail, $modnames,
     }
     if (isset($activity->grade)) {
         echo '<div class="grade">';
-        echo get_string('grade', 'core_grades') . ': ';
-        echo $activity->grade;
+        echo get_string('gradedon', 'core_grades', $activity->grade);
         echo '</div>';
     }
     echo '<div class="user">';
@@ -531,45 +555,6 @@ function vpl_print_recent_mod_activity($activity, $courseid, $detail, $modnames,
     echo '<a href="' . $link . '">' . userdate( $activity->timestamp ) . '</a>';
     echo '</div>';
     echo "</td></tr></table>";
-    return;
-}
-
-/**
- * @codeCoverageIgnore
- *
- * Given a course_module object, this function returns any "extra" information
- * that may be needed whenprinting this activity in a course listing.
- * See get_array_of_activities() in course/lib.php.
- *
- * @param $coursemodule object
- *            The coursemodule object (record).
- * @return object An object on information that the coures will know about
- *      (most noticeably, an icon). fields all optional extra, icon, name.
- */
-
-function vpl_get_coursemodule_info_not_valid($coursemodule) {
-    global $CFG;
-    $ret = new stdClass();
-    $ret->icon = $CFG->wwwroot.'/mod/vpl/icon.gif';
-    $vpl = new mod_vpl($coursemodule->id);
-    $instance = $vpl->get_instance();
-    if ($instance->example) { // Is example.
-        $ret->icon = $CFG->wwwroot.'/mod/vpl/icon_yellow.gif';
-        $ret->name = $vpl->get_instance()->name.' '.get_string('example', VPL);
-        return;
-    }
-    if ($instance->grade == 0) { // Not grade_able .
-        $ret->icon = $CFG->wwwroot.'/mod/vpl/icon_green.gif';
-        return;
-    }
-    if ($instance->automaticgrading) { // Automatic grading.
-        $ret->icon = $CFG->wwwroot.'/mod/vpl/icon_red.gif';
-    }
-    if ($instance->duedate > 0 && $instance->duedate < time()) { // Closed.
-        $ret->icon = $CFG->wwwroot.'/mod/vpl/icon_black.gif';
-        return;
-    }
-    return $ret;
 }
 
 /**
@@ -673,10 +658,10 @@ function vpl_extend_navigation(navigation_node $vplnode, $course, $module, $cm) 
     $manager = $vpl->has_capability( VPL_MANAGE_CAPABILITY );
     $userid = optional_param( 'userid', false, PARAM_INT );
     if (! $userid && $USER->id != $userid) {
-        $parm = array ( 'id' => $cm->id, 'userid' => $userid );
+        $parm = [ 'id' => $cm->id, 'userid' => $userid ];
     } else {
         $userid = $USER->id;
-        $parm = array ( 'id' => $cm->id );
+        $parm = [ 'id' => $cm->id ];
     }
     if ($viewer) {
         $url = new moodle_url( '/mod/vpl/view.php', $parm );
@@ -698,7 +683,7 @@ function vpl_extend_navigation(navigation_node $vplnode, $course, $module, $cm) 
     if (! $example) {
         if ($grader && $USER->id != $userid) {
             $url = new moodle_url( '/mod/vpl/forms/gradesubmission.php', $parm);
-            $node = vpl_navi_node_create($vplnode, 'grade', $url, navigation_node::TYPE_SETTING, 'core_grades');
+            $node = vpl_navi_node_create($vplnode, vpl_get_gradenoun_str(), $url, navigation_node::TYPE_SETTING, 'core');
             $vplnode->add_node( $node );
         }
         $url = new moodle_url( '/mod/vpl/forms/submissionview.php', $parm );
@@ -737,16 +722,17 @@ function vpl_extend_settings_navigation(settings_navigation $settings, navigatio
     if ($manager) {
         $userid = optional_param( 'userid', $USER->id, PARAM_INT );
         $klist = $vplnode->get_children_key_list();
-        if (count( $klist ) > 1) {
-            $fkn = $klist[1];
-            $vplnode->get($klist[0])->icon = new pix_icon('a/setting', '');
-        } else {
-            $fkn = null;
+        $fkn = null;
+        $kpos = array_search('modedit', $klist);
+        if ($kpos === false && array_key_exists(0, $klist)) {
+            $fkn = $klist[0];
+        } else if (array_key_exists($kpos + 1, $klist)) {
+            $fkn = $klist[$kpos + 1];
         }
         if ( $userid != $USER->id ) {
-            $parms = array ( 'id' => $cmid, 'userid' => $userid );
+            $parms = [ 'id' => $cmid, 'userid' => $userid ];
         } else {
-            $parms = array ( 'id' => $cmid );
+            $parms = [ 'id' => $cmid ];
         }
         $url = new moodle_url( '/mod/vpl/forms/testcasesfile.php', $parms );
         $node = vpl_navi_node_create($vplnode, 'testcases', $url, navigation_node::TYPE_SETTING);
@@ -805,15 +791,30 @@ function vpl_extend_settings_navigation(settings_navigation $settings, navigatio
         $testact->add_node( $node, $keybefore );
         if ( $userid != $USER->id ) { // Auto grading has sense?
             $url = new moodle_url( '/mod/vpl/forms/gradesubmission.php', $parms );
-            $node = vpl_navi_node_create($testact, 'grade', $url, navigation_node::TYPE_SETTING, 'core_grades');
+            $node = vpl_navi_node_create($testact, vpl_get_gradenoun_str(), $url, navigation_node::TYPE_SETTING, 'core');
             $testact->add_node( $node, $keybefore );
         }
         $url = new moodle_url( '/mod/vpl/views/previoussubmissionslist.php', $parms );
         $node = vpl_navi_node_create($testact, 'previoussubmissionslist', $url, navigation_node::TYPE_SETTING);
         $testact->add_node( $node, $keybefore );
-        $url = new moodle_url( '/mod/vpl/index.php', array ('id' => $PAGE->cm->course));
+        $url = new moodle_url( '/mod/vpl/index.php', ['id' => $PAGE->cm->course]);
         $node = vpl_navi_node_create($vplnode, 'modulenameplural', $url, navigation_node::TYPE_SETTING);
         $vplnode->add_node( $node, $fkn );
+    }
+}
+
+function vpl_extend_navigation_course(navigation_node $navigation, $course, $context) {
+    global $DB;
+    $capability = has_capability(VPL_MANAGE_CAPABILITY, $context) ||
+                  has_capability(VPL_GRADE_CAPABILITY, $context);
+    if ($capability && $DB->record_exists(VPL,  ['course' => $course->id])) {
+        $navlocation = $navigation->find('coursereports', navigation_node::TYPE_CONTAINER);
+        if (! $navlocation) {
+            $navlocation = $navigation;
+        }
+        $url = new moodle_url( '/mod/vpl/index.php', ['id' => $course->id]);
+        $node = vpl_navi_node_create($navlocation, 'modulenameplural', $url, navigation_node::TYPE_SETTING);
+        $navlocation->add_node($node);
     }
 }
 
@@ -824,7 +825,7 @@ function vpl_scale_used($vplid, $scaleid) {
     global $DB;
     return $scaleid && $DB->record_exists( VPL, [
             'id' => "$vplid",
-            'grade' => "-$scaleid"
+            'grade' => "-$scaleid",
     ] );
 }
 
@@ -839,9 +840,7 @@ function vpl_scale_used($vplid, $scaleid) {
  */
 function vpl_scale_used_anywhere($scaleid) {
     global $DB;
-    return $scaleid && $DB->record_exists( VPL, [
-            'grade' => "-$scaleid"
-    ] );
+    return $scaleid && $DB->record_exists( VPL, ['grade' => "-$scaleid"] );
 }
 
 /**
@@ -863,7 +862,7 @@ function vpl_get_view_actions() {
             'view similarity',
             'view watermarks',
             'similarity form',
-            'view previous'
+            'view previous',
     ];
 }
 
@@ -881,7 +880,7 @@ function vpl_get_post_actions() {
             'save full description',
             'remove grade',
             'upload submission',
-            'variations form'
+            'variations form',
     ];
 }
 
@@ -891,21 +890,16 @@ function vpl_get_post_actions() {
  * Removes all grades from gradebook
  *
  * @param int $courseid
- * @param
- *            string optional type
+ * @param string $type optional
  */
 function vpl_reset_gradebook($courseid, $type = '') {
     global $CFG;
     require_once($CFG->libdir . '/gradelib.php');
-    if ($cms = get_coursemodules_in_course( VPL, $courseid )) {
+    if ($cms = get_coursemodules_in_course(VPL, $courseid)) {
         foreach ($cms as $cm) {
-            $vpl = new mod_vpl( $cm->id );
+            $vpl = new mod_vpl($cm->id);
             $instance = $vpl->get_instance();
-            $itemdetails = array (
-                    'reset' => 1
-            );
-            grade_update( 'mod/vpl', $instance->course, 'mod', VPL, $instance->id
-                          , 0, null, $itemdetails );
+            vpl_grade_item_update($instance, 'reset');
         }
     }
 }
@@ -920,28 +914,27 @@ function vpl_reset_instance_userdata($vplid) {
     global $CFG, $DB;
 
     // Delete submissions records.
-    $DB->delete_records( VPL_SUBMISSIONS, array (
-            'vpl' => $vplid
-    ) );
+    $DB->delete_records( VPL_SUBMISSIONS, [
+            'vpl' => $vplid,
+    ] );
     // Delete variations assigned.
-    $DB->delete_records( VPL_ASSIGNED_VARIATIONS, array (
-            'vpl' => $vplid
-    ) );
+    $DB->delete_records( VPL_ASSIGNED_VARIATIONS, [
+            'vpl' => $vplid,
+    ] );
     // Delete overrides and associated events.
-    require_once(dirname(__FILE__) . '/vpl.class.php');
     $vpl = new mod_vpl(null, $vplid);
     $sql = 'SELECT ao.id as aid, o.*, ao.userid as userids, ao.groupid as groupids
                 FROM {vpl_overrides} o
                 LEFT JOIN {vpl_assigned_overrides} ao ON ao.override = o.id
                 WHERE o.vpl = :vplid';
-    $overridesseparated = $DB->get_records_sql($sql, array('vplid' => $vplid));
+    $overridesseparated = $DB->get_records_sql($sql, ['vplid' => $vplid]);
     $overrides = vpl_agregate_overrides($overridesseparated);
     foreach ($overrides as $override) {
         $vpl->update_override_calendar_events($override, null, true);
     }
-    $DB->delete_records( VPL_ASSIGNED_OVERRIDES, array (
-            'vpl' => $vplid
-    ) );
+    $DB->delete_records( VPL_ASSIGNED_OVERRIDES, [
+            'vpl' => $vplid,
+    ] );
 
     // Delete submission, execution and evaluation files.
     fulldelete( $CFG->dataroot . '/vpl_data/'. $vplid . '/usersdata' );
@@ -957,21 +950,21 @@ function vpl_reset_instance_userdata($vplid) {
  * @return array status array
  */
 function vpl_reset_userdata($data) {
-    $status = array ();
+    $status = [];
     if ($data->reset_vpl_submissions) {
         $componentstr = get_string( 'modulenameplural', VPL );
         if ($cms = get_coursemodules_in_course( VPL, $data->courseid )) {
             foreach ($cms as $cm) { // For each vpl instance in course.
                 $vpl = new mod_vpl( $cm->id );
                 $instance = $vpl->get_instance();
-                $instancestatus = array (
+                $instancestatus = [
                         'component' => $componentstr,
                         'item' => get_string( 'resetvpl', VPL, $instance->name ),
-                        'error' => false
-                );
+                        'error' => false,
+                ];
                 try {
                     vpl_reset_instance_userdata($instance->id);
-                } catch (Exception $e) {
+                } catch (\Throwable $e) {
                     $instancestatus['error'] = true;
                 }
                 $status[] = $instancestatus;
@@ -1000,7 +993,5 @@ function vpl_reset_course_form_definition(&$mform) {
  * Course reset form defaults.
  */
 function vpl_reset_course_form_defaults($course) {
-    return array (
-            'reset_vpl_submissions' => 1
-    );
+    return ['reset_vpl_submissions' => 1];
 }

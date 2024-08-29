@@ -35,6 +35,15 @@ $tasks = [
         'hour' => '*',
         'day' => '*',
         'month' => '*',
-        'dayofweek' => '*'
-    ]
+        'dayofweek' => '*',
+    ],
+    [
+        'classname' => '\mod_vpl\task\check_vpljs_task',
+        'blocking' => 0,
+        'minute' => '17',
+        'hour' => '3',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '*',
+    ],
 ];

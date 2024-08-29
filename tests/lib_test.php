@@ -25,7 +25,7 @@
 
 namespace mod_vpl;
 
-use \stdClass;
+use stdClass;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -54,10 +54,10 @@ class lib_test extends base_test {
      * Method to test vpl_grade_item_update() function
      * @covers \vpl_grade_item_update
      */
-    public function test_vpl_grade_item_update() {
+    public function test_vpl_grade_item_update(): void {
         $this->setUser($this->editingteachers[0]);
         foreach ($this->vpls as $vpl) {
-            $instance = $vpl->get_instance();
+            $instance = clone $vpl->get_instance();
             foreach ([false, 0, -1, 8, 12.5] as $testgrade) {
                 if ($testgrade !== false) {
                     $instance->grade = $testgrade;
@@ -88,8 +88,8 @@ class lib_test extends base_test {
                 foreach ([8, 12.5] as $testgrademax) {
                     foreach ([4, 5, 12.5, 14] as $testgrade) {
                         $instance->grade = $testgrademax;
-                        $grades = array();
-                        $ids = array();
+                        $grades = [];
+                        $ids = [];
                         foreach ($submissions as $sub) {
                             $grade = new stdClass();
                             $grade->userid = $sub->userid;
@@ -126,7 +126,7 @@ class lib_test extends base_test {
      * Method to test vpl_update_grades() function
      * @covers \vpl_update_grades
      */
-    public function test_vpl_update_grades() {
+    public function test_vpl_update_grades(): void {
         global $DB;
         $this->setUser($this->editingteachers[0]);
         foreach ($this->vpls as $vpl) {
@@ -136,8 +136,8 @@ class lib_test extends base_test {
                 foreach ([8, 12.5] as $testgrademax) {
                     foreach ([4, 5, 12.5, 14] as $testgrade) {
                         $instance->grade = $testgrademax;
-                        $grades = array();
-                        $ids = array();
+                        $grades = [];
+                        $ids = [];
                         // Update submissions with grade information.
                         foreach ($submissions as $sub) {
                             $sub->grade = $testgrade;
@@ -179,7 +179,7 @@ class lib_test extends base_test {
      * Method to test vpl_delete_grade_item() function
      * @covers \vpl_delete_grade_item
      */
-    public function test_vpl_delete_grade_item() {
+    public function test_vpl_delete_grade_item(): void {
         $this->setUser($this->editingteachers[0]);
         foreach ($this->vpls as $vpl) {
             $instance = $vpl->get_instance();
@@ -200,20 +200,20 @@ class lib_test extends base_test {
      * Method to test vpl calendar events
      * @covers \vpl_update_instance
      */
-    public function test_vpl_events() {
+    public function test_vpl_events(): void {
         global $DB;
         $this->setUser($this->editingteachers[0]);
         foreach ($this->vpls as $vpl) {
             $instance = $vpl->get_instance();
             $instance->instance = $instance->id;
-            $sparms = array ('modulename' => VPL, 'instance' => $instance->id, 'priority' => null );
+            $sparms = ['modulename' => VPL, 'instance' => $instance->id, 'priority' => null ];
             $event = $DB->get_record( 'event', $sparms );
             $this->assertTrue(($event != false && $instance->duedate == $event->timestart) ||
                     ($event == false && $instance->duedate == 0),
                     $instance->name);
             $instance->duedate = time() + 1000;
             vpl_update_instance($instance);
-            $sparms = array ('modulename' => VPL, 'instance' => $instance->id, 'priority' => null );
+            $sparms = ['modulename' => VPL, 'instance' => $instance->id, 'priority' => null ];
             $event = $DB->get_record( 'event', $sparms );
             $this->assertTrue(($event != false && $instance->duedate == $event->timestart) ||
                     ($event == false && $instance->duedate == 0),
@@ -229,7 +229,7 @@ class lib_test extends base_test {
      * Method to test vpl_update_instance() function
      * @covers \vpl_update_instance
      */
-    public function test_vpl_update_instance() {
+    public function test_vpl_update_instance(): void {
         // Events change tested at test_vpl_events.
         $grades = [-1, 0, 7];
         $this->setUser($this->editingteachers[0]);
@@ -263,7 +263,7 @@ class lib_test extends base_test {
      * Method to test vpl_delete_instance() function
      * @covers \vpl_delete_instance
      */
-    public function test_vpl_delete_instance() {
+    public function test_vpl_delete_instance(): void {
         global $DB, $CFG;
         $this->setUser($this->editingteachers[0]);
         foreach ($this->vpls as $vpl) {
@@ -277,7 +277,7 @@ class lib_test extends base_test {
 
             vpl_delete_instance($instance->id);
 
-            $res = $DB->count_records(VPL, array('id' => $instance->id));
+            $res = $DB->count_records(VPL, ['id' => $instance->id]);
             $this->assertEquals( 0, $res, $instance->name);
 
             $tables = [
@@ -286,18 +286,15 @@ class lib_test extends base_test {
                     VPL_ASSIGNED_VARIATIONS,
                     VPL_RUNNING_PROCESSES,
                     VPL_OVERRIDES,
-                    VPL_ASSIGNED_OVERRIDES
+                    VPL_ASSIGNED_OVERRIDES,
             ];
-            $parms = array('vpl' => $instance->id);
+            $parms = ['vpl' => $instance->id];
             foreach ($tables as $table) {
                 $res = $DB->count_records($table, $parms);
                 $this->assertEquals( 0, $res, $instance->name);
             }
 
-            $res = $DB->count_records(VPL, array('basedon' => $instance->id ));
-            $this->assertEquals( 0, $res, $instance->name);
-
-            $sparms = array ('modulename' => VPL, 'instance' => $instance->id );
+            $sparms = ['modulename' => VPL, 'instance' => $instance->id ];
             $res = $DB->count_records('event', $sparms );
             $this->assertEquals($res, 0, $instance->name);
 
@@ -309,7 +306,7 @@ class lib_test extends base_test {
      * Method to test vpl_supports() function
      * @covers \vpl_supports
      */
-    public function test_vpl_supports() {
+    public function test_vpl_supports(): void {
         $supp = [
                 FEATURE_GROUPS,
                 FEATURE_GROUPINGS,
@@ -325,7 +322,7 @@ class lib_test extends base_test {
         $nosupp = [
                 FEATURE_COMPLETION_TRACKS_VIEWS,
                 FEATURE_COMPLETION_HAS_RULES,
-                FEATURE_ADVANCED_GRADING
+                FEATURE_ADVANCED_GRADING,
         ];
         foreach ($nosupp as $feature) {
             $this->assertFalse(vpl_supports($feature));
@@ -337,7 +334,7 @@ class lib_test extends base_test {
      * Method to test vpl_reset_gradebook() function
      * @covers \vpl_reset_gradebook
      */
-    public function test_vpl_reset_gradebook() {
+    public function test_vpl_reset_gradebook(): void {
         global $DB;
         $this->setUser($this->editingteachers[0]);
         foreach ([4, 5, 12.5, 14] as $testgrade) {
@@ -369,7 +366,7 @@ class lib_test extends base_test {
                 $instance = $vpl->get_instance();
                 $submissions = $vpl->all_last_user_submission();
                 if (count($submissions) > 0) {
-                    $ids = array();
+                    $ids = [];
                     foreach ($submissions as $sub) {
                         $ids[] = $sub->userid;
                     }
@@ -389,20 +386,20 @@ class lib_test extends base_test {
      * Method to test vpl_reset_instance_userdata() function
      * @covers \vpl_reset_instance_userdata
      */
-    public function test_vpl_reset_instance_userdata() {
+    public function test_vpl_reset_instance_userdata(): void {
         global $DB, $CFG;
         $this->setUser($this->editingteachers[0]);
         // Reset user data from instances.
         foreach ($this->vpls as $vpl) {
             $instance = $vpl->get_instance();
             vpl_reset_instance_userdata($instance->id);
-            $parms = array( 'vpl' => $instance->id);
+            $parms = [ 'vpl' => $instance->id];
             $count = $DB->count_records(VPL_SUBMISSIONS, $parms);
             $this->assertEquals(0, $count, $instance->name);
-            $parms = array( 'vpl' => $instance->id);
+            $parms = [ 'vpl' => $instance->id];
             $count = $DB->count_records(VPL_ASSIGNED_VARIATIONS, $parms);
             $this->assertEquals(0, $count, $instance->name);
-            $parms = array( 'vpl' => $instance->id);
+            $parms = [ 'vpl' => $instance->id];
             $count = $DB->count_records(VPL_ASSIGNED_OVERRIDES, $parms);
             $this->assertEquals(0, $count, $instance->name);
             $directory = $CFG->dataroot . '/vpl_data/'. $instance->id . '/usersdata';
@@ -414,8 +411,8 @@ class lib_test extends base_test {
      * Method to test vpl_reset_userdata() function
      * @covers \vpl_reset_userdata
      */
-    public function test_vpl_reset_userdata() {
-        $nsubs = array();
+    public function test_vpl_reset_userdata(): void {
+        $nsubs = [];
         foreach ($this->vpls as $vpl) {
             $instance = $vpl->get_instance();
             $nsubs[$instance->id] = count($vpl->all_user_submission('s.id'));

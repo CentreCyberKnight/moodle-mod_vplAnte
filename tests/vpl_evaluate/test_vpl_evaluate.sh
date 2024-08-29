@@ -1,6 +1,12 @@
 #!/bin/bash
-CHECK_MARK="\u2713";
-X_MARK="\u274C";
+# This file is part of VPL for Moodle
+# Default evaluate script for VPL
+# Copyright (C) 2024 onwards Juan Carlos Rodríguez-del-Pino
+# License http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+# Author Juan Carlos Rodríguez-del-Pino <jcrodriguez@dis.ulpgc.es>
+
+CHECK_MARK="✅";
+X_MARK="❌";
 function writeHeading {
 	echo -e "\e[37;42m RUN \e[39;49m \e[34m$1\e[39m"
 }
@@ -18,6 +24,25 @@ export -f writeHeading
 export -f writeInfo
 export -f writeError
 export -f write
+
+function assertOutput {
+	grep -e "$1" "$VPLTESTOUTPUT" >/dev/null
+	[ $? -eq 0 ] && return 0
+	write
+	writeError "Not found: " "\"$1\" not found in output result"
+	exit 1
+}
+
+function assertOutputFalse {
+	grep -e "$1" "$VPLTESTOUTPUT" >/dev/null
+	[ $? -ne 0 ] && return 0
+	write
+	writeError "Found: " "\"$1\" found in output result"
+	exit 1
+}
+
+export -f assertOutput
+export -f assertOutputFalse
 
 function initTest {
 	writeInfo "Test" ": $1 " -n
@@ -68,23 +93,23 @@ function evalTest {
 	cd $TESTDIR
 	if [ ! -s vpl_execution ] ; then
 	    writeError "$X_MARK"
-    	echo "travis_fold:start:vpl_test.$1"
 		writeError "Test $1 failed: evaluation program compilation failed"
-    	echo "travis_fold:end:vpl_test.$1"
 		result=1
 	else
-		./vpl_test_evaluate.sh $1
+		./vpl_test_evaluate.sh "$1"
 		result=$?
 		if [ "$result" != "0" ] ; then
 		    writeError "$X_MARK"
-	    	echo "travis_fold:start:vpl_test.$1"
 			if [ -s "$VPLTESTERRORS" ] ; then
 			    echo "The program has generated the following errors"
 			    cat $VPLTESTERRORS
 			else
 		    	cat "$VPLTESTOUTPUT"
 			fi
-	    	echo "travis_fold:end:vpl_test.$1"
+		elif [ -n "$DEBUG" ] ; then
+			echo "OUTPUT Testing $1"
+			[ -s "$VPLTESTERRORS" ] && cat "$VPLTESTERRORS"
+			cat "$VPLTESTOUTPUT"
 		fi
 	fi
 	if [ "$result" == "0" ] ; then
@@ -100,12 +125,13 @@ function runAllTests {
 	local npass=0
     local finalResult=0
 	local cases=$(find $CASESDIR -name "*_vpl_run.sh" -print | sort | sed "s/^$CASESDIR\///g" | sed 's/\_vpl_run.sh$//g' )
+	[ -n "$1" ] && cases=$1
 	for case in $cases
 	do
 		let ntests=ntests+1
-		initTest $case
-		runTest $case
-		evalTest $case
+		initTest "$case"
+		runTest "$case"
+		evalTest "$case"
 		if [ "$?" != "0" ] ; then
 			finalResult=1
 		else
@@ -121,13 +147,17 @@ function runAllTests {
 	return $finalResult
 }
 OLDDIR=$(pwd)
-cd $(dirname $0)
+cd "$(dirname $0)"
 writeHeading "TDSPT Testing default Student's program tester of VPL for Moodle"
 export ORIGINDIR="../../jail/default_scripts"
-export TESTDIR="test"
+export TESTDIR="vpl_test.test"
 export CASESDIR="cases"
 export VPLTESTOUTPUT=".vpl_test_output"
 export VPLTESTERRORS=".vpl_test_errors"
-
-runAllTests
-cd $OLDDIR
+[ "$2" == "DEBUG" ] && export DEBUG=true
+if [ "$1" == "DEBUG" ] ; then
+	shift
+	export DEBUG=true
+fi
+runAllTests $1
+cd "$OLDDIR"

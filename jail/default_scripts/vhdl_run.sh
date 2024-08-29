@@ -21,11 +21,11 @@ if [ "$1" == "version" ] ; then
 	exit
 fi
 get_source_files vhdl vhd
-export TERM=dump
+export TERM=dumb
 # compile
 if [ "$PROGRAM" == "ghdl" ] ; then
     ghdl -c $SOURCE_FILES 2>&1 | sed 's/\x1b\[[0-9;]*m//g'
-    TOPENTITY="$(ghdl find-top 2>/dev/null)"
+    TOPENTITY="$(ghdl --find-top 2>/dev/null)"
     if [ "$TOPENTITY" == "" ] ; then
         echo "No top entity found"
     else

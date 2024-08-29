@@ -39,13 +39,13 @@ class util_phpconfig_test extends \advanced_testcase {
     /**
      * Method to test function get_bytes(string $value): int
      */
-    public function test_get_bytes() {
+    public function test_get_bytes(): void {
         $cases = [
             [0, '0'],
             [123, '123'],
             [13 * 1024, '13k'],
             [7 * 1024 * 1024, '7  Mb'],
-            [1024 * 1024 * 1024, '  1G']
+            [1024 * 1024 * 1024, '  1G'],
         ];
         foreach ($cases as $case) {
             $this->assertEquals( $case[0], \mod_vpl\util\phpconfig::get_bytes($case[1]), $case[1]);
@@ -55,14 +55,14 @@ class util_phpconfig_test extends \advanced_testcase {
     /**
      * Method to test function get_post_max_size(): int
      */
-    public function test_get_post_max_size_internal() {
+    public function test_get_post_max_size_internal(): void {
         // Untestable, checks only callable.
         $cases = [
             [PHP_INT_MAX, '0'],
             [123, '123'],
             [13 * 1024, '13k'],
             [7 * 1024 * 1024, '7  Mb'],
-            [1024 * 1024 * 1024, '  1G']
+            [1024 * 1024 * 1024, '  1G'],
         ];
         foreach ($cases as $case) {
             $this->assertEquals( $case[0], \mod_vpl\util\phpconfig::get_post_max_size_internal($case[1]), $case[1]);
@@ -74,14 +74,14 @@ class util_phpconfig_test extends \advanced_testcase {
     /**
      * Method to test function get_post_max_size(): int
      */
-    public function test_get_post_max_size() {
+    public function test_get_post_max_size(): void {
         // Untestable, checks only callable.
         $this->assertTrue(\mod_vpl\util\phpconfig::get_post_max_size() > 0);
     }
     /**
      * Method to test function increase_memory_limit(): void
      */
-    public function test_increase_memory_limit() {
+    public function test_increase_memory_limit(): void {
         $maxpost = \mod_vpl\util\phpconfig::get_post_max_size();
         \mod_vpl\util\phpconfig::increase_memory_limit();
         $memorylimit = \mod_vpl\util\phpconfig::get_bytes(ini_get('memory_limit'));

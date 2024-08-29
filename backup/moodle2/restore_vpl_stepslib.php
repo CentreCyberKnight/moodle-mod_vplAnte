@@ -39,17 +39,32 @@ class restore_vpl_activity_structure_step extends restore_activity_structure_ste
     /**
      * @var array of names of VPL basedon activities indexed by id of linked activities
      */
-    protected $basedonnames = array();
+    protected $basedonnames = [];
 
     /**
+     * Returns the name of the basedon activity
+     *
+     * @param Object $data VPL DB instance
+     * @return string name of basedon activity or empty string
+     */
+    public function get_baseon_name($data) {
+        if ( isset($this->basedonnames[$data->id]) ) {
+            return $this->basedonnames[$data->id];
+        }
+        return '';
+    }
+
+    /**
+     * Returns the id of basedon activity using its activity name
+     *
      * @param Object $data VPL DB instance
      * @return int|boolean id of basedon activity or false
      */
     public function get_baseon_by_name($data) {
         global $DB;
-        if ( isset($this->basedonnames[$data->id]) ) {
-            $basedonname = $this->basedonnames[$data->id];
-            $basedon = $DB->get_record( 'vpl', array ( 'course' => $data->course, 'name' => $basedonname ));
+        $basedonname = $this->get_baseon_name($data);
+        if ( $basedonname ) {
+            $basedon = $DB->get_record('vpl', ['course' => $data->course, 'name' => $basedonname]);
             if ( $basedon != false ) {
                 return $basedon->id;
             }
@@ -62,7 +77,7 @@ class restore_vpl_activity_structure_step extends restore_activity_structure_ste
      * @see restore_structure_step::define_structure()
      */
     protected function define_structure() {
-        $paths = array ();
+        $paths = [];
         $userinfo = $this->get_setting_value ( 'userinfo' );
 
         $paths[] = new restore_path_element ( 'vpl', '/activity/vpl' );
@@ -231,9 +246,9 @@ class restore_vpl_activity_structure_step extends restore_activity_structure_ste
         $vplid = $this->get_new_parentid ( 'vpl' );
         $subid = $this->get_new_parentid ( 'submission' );
         if ($sub === false || $sub->id != $subid) {
-            $sub = $DB->get_record ( 'vpl_submissions', array (
-                    'id' => $subid
-            ), 'id,userid,vpl' );
+            $sub = $DB->get_record ( 'vpl_submissions', [
+                    'id' => $subid,
+            ], 'id,userid,vpl' );
         }
         if ($sub === false) {
             throw new Exception ( 'Submission record not found ' . $subid );

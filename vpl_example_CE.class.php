@@ -35,19 +35,30 @@ class mod_vpl_example_CE extends mod_vpl_submission_CE {
         global $USER;
         $fake = new stdClass();
         $fake->userid = $USER->id;
+        $fake->id = 0;
         $fake->vpl = $vpl->get_instance()->id;
-        parent::__construct( $vpl, $fake );
+        $fake->datesubmitted = time() - 60;
+        $fake->comments = '';
+        $fake->nevaluations = 0;
+        $fake->groupid = 0;
+        parent::__construct($vpl, $fake);
     }
+
+    /**
+     * Cache file group used as submitted files.
+     * @var object
+     */
+    protected $submittedfgm;
 
     /**
      *
      * @return object file group manager for example files
      */
     public function get_submitted_fgm() {
-        if (! $this->submitted_fgm) {
-            $this->submitted_fgm = $this->vpl->get_required_fgm();
+        if (! isset($this->submittedfgm)) {
+            $this->submittedfgm = $this->vpl->get_required_fgm();
         }
-        return $this->submitted_fgm;
+        return $this->submittedfgm;
     }
 
     /**
@@ -58,6 +69,5 @@ class mod_vpl_example_CE extends mod_vpl_submission_CE {
      * @return void
      */
     public function savece($result) {
-        // Paranoic removed.
     }
 }

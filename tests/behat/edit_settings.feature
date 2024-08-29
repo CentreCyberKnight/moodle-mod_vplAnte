@@ -1,4 +1,4 @@
-@mod @mod_vpl @mod_vpl_similarity
+@mod @mod_vpl @mod_vpl_edit_setting
 Feature: Create and change VPL activity settings
   In order to modify activity behaviour
   As an editing teacher
@@ -6,8 +6,8 @@ Feature: Create and change VPL activity settings
 
   Background:
     Given the following "courses" exist:
-      | fullname | shortname | category | groupmode |
-      | Course 1 | C1 | 0 | 1 |
+      | fullname | shortname | category | groupmode | format  | numsections | initsections |
+      | Course 1 | C1        | 0        | 1         | topics  | 1           | 1            |
     And the following "users" exist:
       | username | firstname | lastname | email |
       | teacher1 | Teacher | 1 | teacher1@example.com |
@@ -18,11 +18,17 @@ Feature: Create and change VPL activity settings
       | teacher1 | C1 | editingteacher |
       | teacher2 | C1 | teacher |
       | student1 | C1 | student |
+
     And I log in as "teacher1"
     And I am on "Course 1" course homepage with editing mode on
-    And I add a "Virtual programming lab" to section "1" and I fill the form with:
+    And I open a new activity in section "1" of type VPL
+    And I expand all fieldsets
+    And I set the following fields to these values:
       | id_name | VPL activity default |
-    And I add a "Virtual programming lab" to section "1" and I fill the form with:
+    And I press "Save and return to course"
+    And I open a new activity in section "1" of type VPL
+    And I expand all fieldsets
+    And I set the following fields to these values:
       | id_name | VPL activity full setting |
       | id_shortdescription | VPL activity short description |
       | id_introeditor | Full description |
@@ -41,6 +47,7 @@ Feature: Create and change VPL activity settings
       | id_grade_modgrade_point | 17 |
       | id_reductionbyevaluation | 1% |
       | id_freeevaluations | 3 |
+    And I press "Save and display"
     And I log out
 
   @javascript
@@ -86,7 +93,7 @@ Feature: Create and change VPL activity settings
     And I should see "Evaluate: No"
 
   @javascript
-  Scenario: A non-editing teacher sees default VPL setting values
+  Scenario: A student sees default VPL setting values
     Given I log in as "student1"
     And I am on "Course 1" course homepage
     When I click on "VPL activity default" "link" in the "region-main" "region"
@@ -166,7 +173,6 @@ Feature: Create and change VPL activity settings
     Given I log in as "teacher1"
     And I am on "Course 1" course homepage
     And I click on "VPL activity full setting" "link" in the "region-main" "region"
-    # "Edit setting" for Moodle < 4 and "Setting" for Moodle >= 4
     And I navigate to "ettings" in current page administration
     And I expand all fieldsets
     And I set the following fields to these values:
@@ -176,6 +182,7 @@ Feature: Create and change VPL activity settings
       | id_requirednet | |
       | id_sebrequired | No |
       | id_sebkeys | |
+      | id_cmidnumber | Full CMID |
     # The password field cannot be changed
     And I press "Save and display"
     And I should see "VPL activity changed setting"
@@ -194,6 +201,9 @@ Feature: Create and change VPL activity settings
     And I should see "Disable external file upload"
     And I should see "Run: No"
     And I should see "Evaluate: No"
+    And I navigate to "ettings" in current page administration
+    And I expand all fieldsets
+    And I click on "#id_cmidnumber[value='Full CMID']" in VPL
     And I log out
     And I log in as "student1"
     And I am on "Course 1" course homepage

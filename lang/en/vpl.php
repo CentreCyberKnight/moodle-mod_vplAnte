@@ -37,6 +37,9 @@ $string['automaticgrading'] = 'Automatic grade';
 $string['averageperiods'] = 'Average periods {$a}';
 $string['averagetime'] = 'Average time {$a}';
 $string['basedon'] = 'Based on';
+$string['basedon_missed'] = 'The based-on activity was missed by restoring/importing. Please, include "{$a}"';
+$string['basedon_chain_broken'] = 'Error: The chain of based-on activities is broken. Please, review based-on activities.';
+$string['basedon_deleted'] = 'Error: The based-on activity missed (was deleted?). Please, set the based-on activity.';
 $string['basic'] = 'Basic';
 $string['binaryfile'] = 'Binary File';
 $string['breakpoint'] = 'Breakpoint';
@@ -58,7 +61,9 @@ $string['connection_fail'] = 'connection fail';
 $string['console'] = 'Console';
 $string['copy'] = 'Copy';
 $string['create_new_file'] = 'Create a new file';
-$string['crontask'] = 'Background processing for Virtual Programming Lab module';
+$string['crontask_check_vpljs'] = 'Report VPL Jail Servers';
+$string['messageprovider:bad_jailservers'] = 'Report VPL Jail Servers';
+$string['crontask'] = 'VPL background processing';
 $string['currentstatus'] = 'Current status';
 $string['cut'] = 'Cut';
 $string['datesubmitted'] = 'Date submitted';
@@ -78,6 +83,7 @@ $string['delete_file_q'] = 'Delete file?';
 $string['deleteallsubmissions'] = 'Delete all submissions';
 $string['description'] = 'Description';
 $string['diff'] = 'diff';
+$string['directory_not_renamed'] = 'Directory \'{$a}\' has not been renamed';
 $string['disabled'] = 'Disabled';
 $string['discard_submission_period'] = 'Discard submission period';
 $string['discard_submission_period_description'] = 'For each student and assignment, the system tries to discard submissions. The system keep the last one and at least a submission for every period';
@@ -146,6 +152,7 @@ $string['graderemoved'] = 'The grade has been removed';
 $string['groupwork'] = 'Group work';
 $string['inconsistentgroup'] = 'You are not member of only one group (0 o >1)';
 $string['incorrect_file_name'] = 'Incorrect file name';
+$string['incorrect_directory_name'] = 'Incorrect directory name';
 $string['indicator:cognitivedepth'] = 'VPL cognitive';
 $string['indicator:cognitivedepth_help'] = 'This indicator is based on the cognitive depth reached by the student in an VPL activity.';
 $string['indicator:socialbreadth'] = 'VPL social';
@@ -275,6 +282,7 @@ $string['removegrade'] = 'Remove grade';
 $string['removebreakpoint'] = 'Remove breakpoint';
 $string['rename'] = 'Rename';
 $string['rename_file'] = 'Rename file';
+$string['rename_directory'] = 'Rename directory';
 $string['replace_find'] = 'Replace/Find';
 $string['replacenewer'] = "A newer version was already saved.\nDo you want to replace the newer version with this one?";
 $string['requestedfiles'] = 'Requested files';
@@ -303,6 +311,7 @@ $string['scanningdir'] = 'Scanning directory ...';
 $string['scanoptions'] = 'Scan options';
 $string['scanother'] = 'Scan similarities in added sources';
 $string['scanzipfile'] = 'Zip file';
+$string['search:activity'] = 'Virtual Programming Lab - activity information (name and description)';
 $string['sebkeys'] = 'SEB exam Key/s';
 $string['sebkeys_help'] = 'SEB exam key(s) (max 3) obtained from .seb file<br>It is more reliable than only browser check.<br>https://safeexambrowser.org';
 $string['sebrequired'] = 'SEB browser required';
@@ -313,6 +322,7 @@ $string['server'] = 'Server';
 $string['serverexecutionerror'] = 'Server execution error';
 $string['shortdescription'] = 'Short description';
 $string['shortcuts'] = 'Keyboard shortcuts';
+$string['shrightpanel'] = 'Show/hide right panel';
 $string['similarity'] = 'Similarity';
 $string['similarto'] = 'Similar to';
 $string['startdate'] = 'Available from';
@@ -348,7 +358,8 @@ $string['use_xmlrpc_description'] = 'If set, the system will use the old XML-RPC
 $string['usevariations'] = 'Use variations';
 $string['usewatermarks'] = 'Use watermarks';
 $string['usewatermarks_description'] = 'Adds watermarks to student\'s files (only to supported languages)';
-$string['variation'] = 'Variation {$a}';
+$string['variation_n'] = 'Variation {$a}';
+$string['variation_n_i'] = 'Variation {$a->number}: {$a->identification}';
 $string['variation_options'] = 'Variation options';
 $string['variations'] = 'Variations';
 $string['variations_unused'] = 'This activity has variations, but are disabled';
@@ -393,7 +404,20 @@ $string['stop'] = 'Stop';
 $string['pause'] = 'Pause';
 $string['resume'] = 'Resume';
 $string['step'] = 'Step';
+$string['message::subject_bad_jailservers'] = 'Important Report of the VPL Plugin in Moodle on the \'{$a}\' Server';
+$string['message::body_header_bad_jailservers'] = '
+The VPL Jail servers in the following list
+**urgently** need to update the VPL-Jail-System software:';
+$string['message::body_footer_bad_jailservers'] = '
+To download the latest version of the VPL-Jail-System,
+visit the VPL for Moodle home page and navigate to the "Download" section.
+Remember to use the parameters URLPATH and/or TASK_ONLY_FROM
+to enhance your security settings as recommended.
 
+To locate activities using local VPL Jail servers,
+search in the field jailservers of the table {prefix}vpl.
+';
+$string['message::bad_jailserver'] = 'Not used due server software update required. Contact your system administrator';
 $string['check_jail_servers_help'] = "<p>This page check and show the status of execution servers used
 for this activity.</p>";
 $string['executionfiles_help'] = '<p>Here you set the files that are needed to prepare the execution,

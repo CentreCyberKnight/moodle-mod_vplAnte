@@ -27,14 +27,14 @@
  */
 namespace mod_vpl\privacy;
 
-use \core_privacy\local\metadata\collection;
-use \core_privacy\local\request\approved_contextlist;
-use \core_privacy\local\request\contextlist;
-use \core_privacy\local\request\transform;
-use \core_privacy\local\request\writer;
-use \core_privacy\local\request\content_writer;
-use \core_privacy\local\request\userlist;
-use \core_privacy\local\request\approved_userlist;
+use core_privacy\local\metadata\collection;
+use core_privacy\local\request\approved_contextlist;
+use core_privacy\local\request\contextlist;
+use core_privacy\local\request\transform;
+use core_privacy\local\request\writer;
+use core_privacy\local\request\content_writer;
+use core_privacy\local\request\userlist;
+use core_privacy\local\request\approved_userlist;
 
 /**
  * VPL provider class
@@ -283,7 +283,7 @@ class provider implements \core_privacy\local\metadata\provider,
     }
 
     /**
-     * Delete all user data for the specified user, in the specified contexts.
+     * Delete user data in the list of given contexts.
      *
      * @param approved_contextlist $contextlist a list of contexts approved for deletion.
      */
@@ -534,7 +534,7 @@ class provider implements \core_privacy\local\metadata\provider,
      * @param int $userid the userid.
      * @return void.
      */
-    protected static function add_contexts_for_overrides(contextlist $list, int $userid) : void {
+    protected static function add_contexts_for_overrides(contextlist $list, int $userid): void {
         $sql = "SELECT DISTINCT ctx.id
                   FROM {context} ctx
                   JOIN {course_modules} cm ON cm.id = ctx.instanceid AND ctx.contextlevel = :contextmodule
@@ -581,7 +581,7 @@ class provider implements \core_privacy\local\metadata\provider,
      * @param int $userid The userid of the preferences to return
      */
     protected static function get_user_preferences(int $userid): array {
-        $pref = array();
+        $pref = [];
         $preferences = ['vpl_editor_fontsize', 'vpl_acetheme', 'vpl_terminaltheme'];
         foreach ($preferences as $key) {
             $value = get_user_preferences($key, null, $userid);
@@ -605,7 +605,7 @@ class provider implements \core_privacy\local\metadata\provider,
         $params = [
             'modulename' => 'vpl',
             'contextmodule' => CONTEXT_MODULE,
-            'coursemoduleid' => $context->instanceid
+            'coursemoduleid' => $context->instanceid,
         ];
         $sql = "SELECT v.*
                   FROM {vpl} v
@@ -751,7 +751,7 @@ class provider implements \core_privacy\local\metadata\provider,
         $params = [
             'vplid' => $vplid,
             'userid' => $userid,
-            'graderid' => $userid
+            'graderid' => $userid,
         ];
 
         $sql = "SELECT *

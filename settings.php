@@ -28,7 +28,7 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-require_once(dirname(__FILE__) . '/lib.php');
+require_once(dirname(__FILE__) . '/locallib.php');
 
 $kbyte = 1024;
 $megabyte = 1024 * $kbyte;
@@ -40,8 +40,8 @@ $listmaxexememory = vpl_get_select_sizes( 16 * $megabyte );
 $defaultmaxfilesize = vpl_get_array_key( $listmaxfilesize, $megabyte );
 $defaultmaxtime = vpl_get_array_key( $listmaxtime, 16 * $minute );
 $defaultmaxexefilesize = vpl_get_array_key( $listmaxexefilesize, 128 * $megabyte );
-$defaultmaxexememory = vpl_get_array_key( $listmaxexememory, 512 * $megabyte );
-$defaultmaxexeprocesses = 400;
+$defaultmaxexememory = vpl_get_array_key( $listmaxexememory, 1024 * $megabyte );
+$defaultmaxexeprocesses = 600;
 $defaultdefaultfilesize = vpl_get_array_key( $listmaxfilesize, 64 * $kbyte );
 $defaultdefaulttime = vpl_get_array_key( $listmaxtime, 4 * $minute );
 $defaultdefaultexefilesize = vpl_get_array_key( $listmaxexefilesize, 64 * $megabyte );
@@ -88,7 +88,7 @@ $settings->add(
 $settings->add( new admin_setting_heading( 'heading2', '', get_string( 'jail_servers_config', VPL ) ) );
 $default = "# This server is only for test use.\n";
 $default .= "# Install your own Jail server and remove the following line as soon as possible.\n";
-$default .= 'http://demojail.dis.ulpgc.es';
+$default .= 'https://demojail.dis.ulpgc.es';
 $settings->add(
         new admin_setting_configtextarea( $prefix . 'jail_servers', get_string( 'jail_servers', VPL ),
                 get_string( 'jail_servers_description', VPL ), $default ) );
@@ -98,11 +98,11 @@ $settings->add(
 $settings->add(
         new admin_setting_configcheckbox( $prefix . 'acceptcertificates', get_string( 'acceptcertificates', VPL ),
                         get_string( 'acceptcertificates_description', VPL ), 1 ) );
-$wsoptions = array (
+$wsoptions = [
         'always_use_wss' => get_string( 'always_use_wss', VPL ),
         'always_use_ws' => get_string( 'always_use_ws', VPL ),
-        'depends_on_https' => get_string( 'depends_on_https', VPL )
-);
+        'depends_on_https' => get_string( 'depends_on_https', VPL ),
+];
 $name = 'websocket_protocol';
 $settings->add(
         new admin_setting_configselect( $prefix . 'websocket_protocol', get_string( 'websocket_protocol', VPL ),
@@ -121,7 +121,7 @@ $default = vpl_get_array_key( $list, 60 );
 $settings->add(
         new admin_setting_configselect( $prefix . 'discard_submission_period', get_string( 'discard_submission_period', VPL ),
                 get_string( 'discard_submission_period_description', VPL ), $default, $list ) );
-$list = array(
+$list = [
         'ambiance',
         'chaos',
         'chrome',
@@ -156,9 +156,9 @@ $list = array(
         'tomorrow',
         'twilight',
         'vibrant_ink',
-        'xcode'
-);
-$themelist = array();
+        'xcode',
+];
+$themelist = [];
 foreach ($list as $theme) {
     $themelist[$theme] = $theme;
 }

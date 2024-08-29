@@ -37,6 +37,7 @@ require_once($CFG->dirroot . '/mod/vpl/vpl_submission_CE.class.php');
 /**
  * Unit tests for mod_vpl class.
  * @group mod_vpl
+ * @group mod_vpl_vpl
  */
 class vpl_test extends base_test {
 
@@ -52,11 +53,11 @@ class vpl_test extends base_test {
      * Method to test mod_vpl::delete_all
      * @covers \mod_vpl::delete_all
      */
-    public function test_delete_all() {
+    public function test_delete_all(): void {
         global $CFG, $DB;
         // Get vpls information.
-        $submissions = array();
-        $othervpls = array();
+        $submissions = [];
+        $othervpls = [];
         foreach ($this->vpls as $vpl) {
             $vplid = $vpl->get_instance()->id;
             $submissions[$vplid] = $vpl->all_last_user_submission();
@@ -67,7 +68,7 @@ class vpl_test extends base_test {
             // Test full delete.
             $instance = $vpl->get_instance();
             $directory = $CFG->dataroot . '/vpl_data/' . $instance->id;
-            $res = $DB->get_record(VPL, array('id' => $instance->id));
+            $res = $DB->get_record(VPL, ['id' => $instance->id]);
             $this->assertFalse( $res, $instance->name);
             $tables = [
                 VPL_SUBMISSIONS,
@@ -75,14 +76,14 @@ class vpl_test extends base_test {
                 VPL_ASSIGNED_VARIATIONS,
                 VPL_RUNNING_PROCESSES,
                 VPL_OVERRIDES,
-                VPL_ASSIGNED_OVERRIDES
+                VPL_ASSIGNED_OVERRIDES,
             ];
-            $parms = array('vpl' => $instance->id);
+            $parms = ['vpl' => $instance->id];
             foreach ($tables as $table) {
                 $res = $DB->get_records($table, $parms);
                 $this->assertCount( 0, $res, $instance->name);
             }
-            $sparms = array ('modulename' => VPL, 'instance' => $instance->id );
+            $sparms = ['modulename' => VPL, 'instance' => $instance->id ];
             $event = $DB->get_record('event', $sparms );
             $this->assertFalse($event, $instance->name);
             $this->assertFalse(file_exists($directory) && is_dir($directory), $instance->name);
@@ -91,7 +92,7 @@ class vpl_test extends base_test {
             foreach ($othervpls as $other) {
                 $instance = $other->get_instance();
                 $directory = $CFG->dataroot . '/vpl_data/' . $instance->id;
-                $res = $DB->get_record(VPL, array('id' => $instance->id));
+                $res = $DB->get_record(VPL, ['id' => $instance->id]);
                 $this->assertNotEmpty( $res, $instance->name);
                 $subsexpected = $submissions[$instance->id];
                 $subsresult = $other->all_last_user_submission();
@@ -112,15 +113,15 @@ class vpl_test extends base_test {
     /**
      * Internal method to test mod_vpl::get_students returns
      */
-    public function internal_test_get_students($users, $students) {
-        $studentsid = array();
-        foreach ($students as $student) {
-            $studentsid[$student->id] = $student;
+    public function internal_test_users($users, $expected) {
+        $usersid = [];
+        foreach ($expected as $user) {
+            $usersid[$user->id] = $user;
         }
-        $this->assertEquals(count($students), count($users));
-        foreach ($users as $student) {
-            $this->assertTrue(isset($studentsid[$student->id]));
-            unset($studentsid[$student->id]);
+        $this->assertEquals(count($expected), count($users));
+        foreach ($users as $user) {
+            $this->assertTrue(isset($usersid[$user->id]));
+            unset($usersid[$user->id]);
         }
     }
 
@@ -128,18 +129,43 @@ class vpl_test extends base_test {
      * Method to test mod_vpl::get_students
      * @covers \mod_vpl::get_students
      */
-    public function test_get_students() {
+    public function test_get_students(): void {
         $vpl = $this->vpldefault;
-        $this->internal_test_get_students($vpl->get_students(), $this->students);
-        $this->internal_test_get_students($vpl->get_students('', 'u.username'), $this->students);
-        $this->internal_test_get_students($vpl->get_students('', ',u.username'), $this->students);
+        $this->internal_test_users($vpl->get_students(), $this->students);
+        $this->internal_test_users($vpl->get_students('', 'u.username'), $this->students);
+        $this->internal_test_users($vpl->get_students('', ',u.username'), $this->students);
+        $this->internal_test_users($vpl->get_students(), $this->students);
+        for ($i = 0; $i < count($this->groups); $i++) {
+            $students = [];
+            foreach ($this->students as $student) {
+                if ($student->groupassigned == $i) {
+                    $students[] = $student;
+                }
+            }
+            $this->internal_test_users($vpl->get_students($this->groups[$i]->id), $students);
+        }
+    }
+
+    /**
+     * Method to test mod_vpl::get_graders
+     * @covers \mod_vpl::get_graders
+     */
+    public function test_get_graders(): void {
+        $vpl = $this->vpldefault;
+        $teachers = array_merge($this->teachers, $this->editingteachers);
+        $this->internal_test_users($vpl->get_graders(), $teachers);
+        $this->internal_test_users($vpl->get_graders(''), $teachers);
+        $this->internal_test_users($vpl->get_graders(false), $teachers);
+        $this->internal_test_users($vpl->get_graders('0'), $teachers);
+        $this->internal_test_users($vpl->get_graders($this->groups[2]->id), $this->teachers);
+        $this->internal_test_users($vpl->get_graders($this->groups[3]->id), $this->editingteachers);
     }
 
     /**
      * Method to test mod_vpl::add_submission
      * @covers \mod_vpl::add_submission
      */
-    public function test_add_submission() {
+    public function test_add_submission(): void {
         // Test regular submission.
         // Test equal submission.
         // Test team submission and last user submission.
@@ -151,7 +177,7 @@ class vpl_test extends base_test {
      * Method to test mod_vpl::print_submission_restriction
      * @covers \mod_vpl::print_submission_restriction
      */
-    public function test_print_submission_restriction() {
+    public function test_print_submission_restriction(): void {
         // TODO Refactor code to test print submission.
     }
 
@@ -159,14 +185,14 @@ class vpl_test extends base_test {
      * Method to test mod_vpl::get_effective_setting
      * @covers \mod_vpl::get_effective_setting
      */
-    public function test_get_effective_setting() {
+    public function test_get_effective_setting(): void {
         $vpl = $this->vploverrides;
         $instance = $vpl->get_instance();
         $baseduedate = $instance->duedate;
 
         // Check that student 0 has default settings.
         $user = $this->students[0];
-        foreach (array('startdate', 'duedate', 'reductionbyevaluation', 'freeevaluations') as $field) {
+        foreach (['startdate', 'duedate', 'reductionbyevaluation', 'freeevaluations'] as $field) {
             $this->assertEquals(
                     $instance->$field,
                     $vpl->get_effective_setting($field, $user->id),
@@ -175,8 +201,8 @@ class vpl_test extends base_test {
         }
 
         // Check that student 1 and student 2 have everything (due date is postponed by 1 day) overriden.
-        foreach (array($this->students[1], $this->students[2]) as $user) {
-            foreach (array('startdate', 'reductionbyevaluation', 'freeevaluations') as $field) {
+        foreach ([$this->students[1], $this->students[2]] as $user) {
+            foreach (['startdate', 'reductionbyevaluation', 'freeevaluations'] as $field) {
                 $this->assertNotEquals(
                         $instance->$field,
                         $vpl->get_effective_setting($field, $user->id),
@@ -191,8 +217,8 @@ class vpl_test extends base_test {
         }
 
         // Check that student 3, teacher 0 and editing teacher 0 has due date (due date is postponed by 2 days) overriden.
-        foreach (array($this->students[3], $this->teachers[0], $this->editingteachers[0]) as $user) {
-            foreach (array('startdate', 'reductionbyevaluation', 'freeevaluations') as $field) {
+        foreach ([$this->students[3], $this->teachers[0], $this->editingteachers[0]] as $user) {
+            foreach (['startdate', 'reductionbyevaluation', 'freeevaluations'] as $field) {
                 $this->assertEquals(
                         $instance->$field,
                         $vpl->get_effective_setting($field, $user->id),
@@ -208,7 +234,7 @@ class vpl_test extends base_test {
 
         // Check that teacher 1 has due date (due date is disabled) overriden.
         $user = $this->teachers[1];
-        foreach (array('startdate', 'reductionbyevaluation', 'freeevaluations') as $field) {
+        foreach (['startdate', 'reductionbyevaluation', 'freeevaluations'] as $field) {
             $this->assertEquals(
                     $instance->$field,
                     $vpl->get_effective_setting($field, $user->id),
@@ -228,7 +254,7 @@ class vpl_test extends base_test {
                 continue;
             }
             foreach ($this->users as $user) {
-                foreach (array('startdate', 'duedate', 'reductionbyevaluation', 'freeevaluations') as $field) {
+                foreach (['startdate', 'duedate', 'reductionbyevaluation', 'freeevaluations'] as $field) {
                     $this->assertEquals(
                             $instance->$field,
                             $vpl->get_effective_setting($field, $user->id),
@@ -243,7 +269,7 @@ class vpl_test extends base_test {
      * Method to test mod_vpl::update_override_calendar_events
      * @covers \mod_vpl::update_override_calendar_events
      */
-    public function test_update_override_calendar_events() {
+    public function test_update_override_calendar_events(): void {
         global $CFG;
         require_once($CFG->dirroot . '/calendar/lib.php');
         $vpl = $this->vploverrides;
@@ -271,7 +297,7 @@ class vpl_test extends base_test {
         );
 
         // Check that student 1 and student 2 have due date postponed by 1 day event.
-        foreach (array($this->students[1], $this->students[2]) as $user) {
+        foreach ([$this->students[1], $this->students[2]] as $user) {
             $userevents = array_filter(calendar_get_events($start, $end, $user->id, false, $instance->course),
                     function($event) use ($instance) {
                         return $event->modulename == VPL && $event->instance == $instance->id
@@ -310,7 +336,7 @@ class vpl_test extends base_test {
         );
 
         // Check that teacher 0 and editing teacher 0 have due date postponed by 2 days (group) event.
-        foreach (array($this->groups[2], $this->groups[3]) as $group) {
+        foreach ([$this->groups[2], $this->groups[3]] as $group) {
             $groupevents = array_filter(calendar_get_events($start, $end, false, $group->id, $instance->course),
                     function($event) use ($instance) {
                         return $event->modulename == VPL && $event->instance == $instance->id

@@ -47,10 +47,10 @@ try {
     // TODO use or not sesskey "require_sesskey();".
     require_login( $vpl->get_course(), false );
     $vpl->require_capability( VPL_MANAGE_CAPABILITY );
-    $PAGE->set_url( new moodle_url( '/mod/vpl/forms/requiredfiles.json.php', array (
+    $PAGE->set_url( new moodle_url( '/mod/vpl/forms/requiredfiles.json.php', [
             'id' => $id,
-            'action' => $action
-    ) ) );
+            'action' => $action,
+    ] ) );
     echo $OUTPUT->header(); // Send headers.
     $actiondata = json_decode(file_get_contents( 'php://input' ), null, 512, JSON_INVALID_UTF8_SUBSTITUTE);
     switch ($action) {
@@ -71,15 +71,16 @@ try {
             $vpl->update();
             break;
         case 'load' :
+            $result->response = mod_vpl_edit::load($vpl, $USER->id);
             $fgm = $vpl->get_required_fgm();
             $files = $fgm->getallfiles();
-            $result->response->files = mod_vpl_edit::filestoide( $files );
+            $result->response->files = mod_vpl_edit::filestoide($files);
             $result->response->version = $fgm->getversion();
             break;
         default :
             throw new Exception( 'ajax action error: ' + $action );
     }
-} catch ( Exception $e ) {
+} catch (\Throwable $e) {
     $result->success = false;
     $result->error = $e->getMessage();
 }

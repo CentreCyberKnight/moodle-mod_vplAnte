@@ -59,11 +59,11 @@ class restore_vpl_activity_task extends restore_activity_task {
      * processed by the link decoder
      */
     public static function define_decode_contents() {
-        $contents = array ();
+        $contents = [];
 
-        $contents[] = new restore_decode_content ( 'vpl', array (
-                'intro'
-        ), 'vpl' );
+        $contents[] = new restore_decode_content ( 'vpl', [
+                'intro',
+        ], 'vpl' );
 
         return $contents;
     }
@@ -73,7 +73,7 @@ class restore_vpl_activity_task extends restore_activity_task {
      * to the activity to be executed by the link decoder
      */
     public static function define_decode_rules() {
-        $rules = array ();
+        $rules = [];
 
         $rules[] = new restore_decode_rule ( 'VPLVIEWBYID', '/mod/vpl/view.php?id=$1', 'course_module' );
         $rules[] = new restore_decode_rule ( 'VPLINDEX', '/mod/vpl/index.php?id=$1', 'course' );
@@ -83,29 +83,29 @@ class restore_vpl_activity_task extends restore_activity_task {
 
     /**
      * Define the restore log rules that will be applied
-     * by the {@link restore_logs_processor} when restoring
+     * by the {@ link restore_logs_processor} when restoring
      * choice logs.
      * It must return one array
-     * of {@link restore_log_rule} objects
+     * of {@ link restore_log_rule} objects
      */
     public static function define_restore_log_rules() {
-        $rules = array ();
+        $rules = [];
         return $rules;
     }
 
     /**
      * Define the restore log rules that will be applied
-     * by the {@link restore_logs_processor} when restoring
+     * by the {@ link restore_logs_processor} when restoring
      * course logs.
      * It must return one array
-     * of {@link restore_log_rule} objects
+     * of {@ link restore_log_rule} objects
      *
      * Note this rules are applied when restoring course logs
      * by the restore final task, but are defined here at
      * activity level. All them are rules not linked to any module instance (cmid = 0)
      */
     public static function define_restore_log_rules_for_course() {
-        $rules = array ();
+        $rules = [];
         return $rules;
     }
 
@@ -116,13 +116,18 @@ class restore_vpl_activity_task extends restore_activity_task {
     public function after_restore() {
         global $DB;
         $id = $this->get_activityid ();
-        $data = $DB->get_record ( 'vpl', array (
-                'id' => $id
-        ) );
-        if ($data != false) {
+        $data = $DB->get_record ( 'vpl', [
+                'id' => $id,
+        ] );
+        if ($data != false && $data->basedon) {
             $data->basedon = $this->structurestep->get_mappingid ( 'vpl', $data->basedon );
             if ($data->basedon == false ) {
                 $data->basedon = $this->structurestep->get_baseon_by_name($data);
+            }
+            if ($data->basedon == false ) {
+                $basedonname = $this->structurestep->get_baseon_name($data);
+                $error = get_string('basedon_missed', 'vpl', $basedonname);
+                $data->name .= " ($error)";
             }
             $DB->update_record ( 'vpl', $data );
         }

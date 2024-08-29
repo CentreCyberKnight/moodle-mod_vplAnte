@@ -20,11 +20,11 @@
 $string['about'] = 'Acerca de';
 $string['acceptcertificates'] = 'Aceptar certificados auto firmados';
 $string['acceptcertificates_description'] = 'Si sus servidores de ejecución NO están usando certificados auto firmados desmarque';
-$string['acceptcertificatesnote'] = '<p>Usted está usando una conexión cifrada.<p/>
+$string['acceptcertificatesnote'] = '<p>Usted está usando una conexión cifrada.</p>
 <p>Para usar una conexión cifrada con los servidores de ejecución usted debe aceptar sus certificados de seguridad.</p>
 <p>Si no quiere aceptar los certificados o tiene problemas con ese proceso, puede
 probar a usar una conexión http (no cifrada) u otro navegador.</p>
-<p>Por favor, pulse sobre los siguientes enlaces (Sevidor #) y acepte los certificados ofrecidos.</p>';
+<p>Por favor, pulse sobre los siguientes enlaces (Servidor #) y acepte los certificados ofrecidos.</p>';
 $string['addfile'] = 'Añadir fichero';
 $string['advanced'] = 'Avanzado';
 $string['allfiles'] = 'Todos los ficheros';
@@ -37,6 +37,9 @@ $string['autodetect'] = 'Autodetectar';
 $string['averageperiods'] = 'Periodos promedio {$a}';
 $string['averagetime'] = 'Tiempo promedio {$a}';
 $string['basedon'] = 'Basado en';
+$string['basedon_missed'] = 'Error: Se perdió la actividad "basado en" al restaurar o importar. Por favor, incluya "{$a}"';
+$string['basedon_chain_broken'] = 'Error: La cadena de actividades "basado en" está rota. Revise dichas actividades.';
+$string['basedon_deleted'] = 'Error: Se perdió la actividad "basado en". Puede que se borrara. Establezca una actividad "basado en';
 $string['basic'] = 'Básico';
 $string['binaryfile'] = 'Fichero binario';
 $string['breakpoint'] = 'Punto de parada';
@@ -72,11 +75,12 @@ $string['defaultfilesize'] = 'Tamaño máximo por defecto de cada fichero de sub
 $string['defaultresourcelimits'] = 'Límites por defecto de recursos de ejecución';
 $string['delete'] = 'Borrar';
 $string['delete_file'] = 'Borra el fichero';
-$string['delete_file_fq'] = "¿Confirma el borrado del fichero '{\$a}'?";
+$string['delete_file_fq'] = '¿Confirma el borrado del fichero \'{$a}\'?';
 $string['delete_file_q'] = '¿Borrar el fichero?';
 $string['deleteallsubmissions'] = 'Elimina todas las entregas';
 $string['description'] = 'Descripción';
 $string['diff'] = 'diff';
+$string['directory_not_renamed'] = 'El directorio \'{$a}\' no se ha renombrado';
 $string['discard_submission_period'] = 'Periodo de descarte de entregas';
 $string['discard_submission_period_description'] = 'Para cada estudiante y tarea, se intenta descartar entregas manteniendo la última y al menos una por cada periodo';
 $string['download'] = 'Descargar';
@@ -137,6 +141,7 @@ $string['graderemoved'] = 'La calificación ha sido eliminada';
 $string['groupwork'] = 'En grupo';
 $string['inconsistentgroup'] = 'Usted no es miembro de un único grupo (0 o >1)';
 $string['incorrect_file_name'] = 'Nombre de fichero incorrecto';
+$string['incorrect_directory_name'] = 'Nombre de directorio incorrecto';;
 $string['individualwork'] = 'Individual';
 $string['instanceselection'] = 'Selección de VPL';
 $string['isexample'] = 'Esta actividad actúa como ejemplo';
@@ -165,14 +170,14 @@ $string['maxfilesize'] = 'Tamaño máximo de cada fichero de subida';
 $string['maxfilesizeexceeded'] = 'Superado el tamaño máximo de los ficheros';
 $string['maximumperiod'] = 'Periodo máximo {$a}';
 $string['maxresourcelimits'] = 'Límites máximos de recursos de ejecución';
-$string['maxsimilarityoutput'] = 'Máxima salida por similaridad';
+$string['maxsimilarityoutput'] = 'Máxima salida por similitud';
 $string['menucheck_jail_servers'] = 'Comprobación servidores ejecución';
 $string['menuexecutionfiles'] = 'Ficheros ejecución';
 $string['menuexecutionoptions'] = 'Opciones';
 $string['menukeepfiles'] = "Ficheros a mantener";
 $string['menulocal_jail_servers'] = 'Servidores ejecución locales';
 $string['menuresourcelimits'] = 'Límites de recursos';
-$string['minsimlevel'] = 'Nivel de similaridad mínima a mostrar';
+$string['minsimlevel'] = 'Nivel de similitud mínima a mostrar';
 $string['moduleconfigtitle'] = 'Configuración del módulo VPL';
 $string['modulename'] = 'Laboratorio virtual de programación';
 $string['modulenameplural'] = 'Laboratorios virtuales de programación';
@@ -238,6 +243,7 @@ $string['removegrade'] = 'Borra calificación';
 $string['removebreakpoint'] = 'Elimina punto de parada';
 $string['rename'] = 'Renombrar';
 $string['rename_file'] = 'Renombrar fichero';
+$string['rename_directory'] = 'Renombrar directorio';
 $string['replace_find'] = 'Reemplazar/Buscar';
 $string['replacenewer'] = "Se tiene guardada una versión más nueva.\n¿Seguro que quiere reemplazarla por la actual?";
 $string['requestedfiles'] = 'Ficheros requeridos';
@@ -263,8 +269,9 @@ $string['scanactivity'] = 'Actividad';
 $string['scandirectory'] = 'Directorio';
 $string['scanningdir'] = 'Examinando el directorio ...';
 $string['scanoptions'] = 'Opciones de búsqueda';
-$string['scanother'] = 'Buscar similaridad en otras fuentes';
+$string['scanother'] = 'Buscar similitudes en otras fuentes';
 $string['scanzipfile'] = 'Fichero zip';
+$string['search:activity'] = 'Virtual Programming Lab - información de la actividad (nombre y descripción)';
 $string['sebkeys'] = 'Clave(s) de examen SEB';
 $string['sebkeys_help'] = 'Las claves de examen SEB se obtienen de los ficheros .seb<br>Este mecanismo es más seguro que sólo comprobar el navegador.<br>https://safeexambrowser.org';
 $string['sebrequired'] = 'Se requiere navegador SEB';
@@ -275,7 +282,8 @@ $string['server'] = 'Servidor';
 $string['serverexecutionerror'] = 'Error en el servidor de ejecución';
 $string['shortdescription'] = 'Descripción corta';
 $string['shortcuts'] = 'Atajos de teclado';
-$string['similarity'] = 'Similaridad';
+$string['shrightpanel'] = 'Muestra/oculta panel derecho';
+$string['similarity'] = 'Similitud';
 $string['similarto'] = 'Similar a';
 $string['startdate'] = 'Disponibilidad';
 $string['starting'] = 'Iniciando';
@@ -310,7 +318,8 @@ $string['use_xmlrpc_description'] = 'Si se establece, el sistema usara XML-RPC e
 $string['usevariations'] = 'Usar variaciones';
 $string['usewatermarks'] = 'Usar marcas de agua';
 $string['usewatermarks_description'] = 'Añade marcas de agua a los ficheros de los estudiantes (sólo en lenguajes soportados)';
-$string['variation'] = 'Variación {$a}';
+$string['variation_n'] = 'Variación {$a}';
+$string['variation_n_i'] = 'Variación {$a->number}: {$a->identification}';
 $string['variation_options'] = 'Opciones de variación';
 $string['variations'] = 'Variaciones';
 $string['variations_unused'] = 'Esta actividad tiene variaciones, pero están desactivadas';
@@ -319,11 +328,11 @@ $string['varidentification'] = 'Identificación';
 $string['visiblegrade'] = 'Mostrar evaluación';
 $string['vpl:addinstance'] = 'Añade nuevas actividades VPL';
 $string['vpl:grade'] = 'Evaluar una entrega';
-$string['vpl:manage'] = 'Gestionar un vpl';
+$string['vpl:manage'] = 'Gestionar un VPL';
 $string['vpl:setjails'] = 'Establece servidores de ejecución para instancias concretas de VPL';
 $string['vpl:similarity'] = 'Buscar similiudes entre entregas';
 $string['vpl:submit'] = 'Hacer entregas';
-$string['vpl:view'] = 'Ver la descripción completa de un vpl';
+$string['vpl:view'] = 'Ver la descripción completa de un VPL';
 $string['vpl'] = 'Laboratorio virtual de programación';
 $string['VPL_COMPILATIONFAILED'] = 'La compilación o preparación de la ejecución ha fallado';
 $string['vpl_debug.sh'] = "Prepara la depuración del programa";
@@ -388,14 +397,14 @@ $string['local_jail_servers_help'] = '<p>Aquí se establecen los servidores de e
 <p>Si se quiere impedir que esta actividad y las que se basen en ella no use los servidores especificados en las actividades derivadas ni
 los especificados globalmente, añada al final una línea que contenga "end_of_jails".
 </p>';
-$string['modulename_help'] = '<p>VPL permite la gestión de prácticas de programación teniendo como características más destacadas:
+$string['modulename_help'] = '<p>VPL permite la gestión de prácticas de programación teniendo como características más destacadas:</p>
 <ul>
 <li>Posibilidad de editar el código fuente en el navegador.</li>
 <li>Posibilidad de ejecutar las prácticas de forma interactiva desde el navegador.</li>
 <li>Posibilidad de ejecutar pruebas que revisen las prácticas.</li>
 <li>Búsqueda de similitud entre prácticas para el control del plagio.</li>
 <li>Restricciones de entrega de prácticas que limitan el corta y pega de código externo.</li>
-</ul></p>
+</ul>
 <p><a href="http://vpl.dis.ulpgc.es">Página oficial de Virtual Programming lab</a></p>';
 $string['modulename_link'] = 'mod/vpl/view';
 $string['requestedfiles_help'] = '<p>Aquí se fijan nombres y contenido inicial para los ficheros requeridos.</p>
