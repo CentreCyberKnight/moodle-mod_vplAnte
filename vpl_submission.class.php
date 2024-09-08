@@ -450,7 +450,7 @@ class mod_vpl_submission {
 	  //check if must_complete is set
 	  if($info->must_complete==1)
 	    {
-	      //	      print("$grade vs $info->grade");
+	      //print("$grade vs $info->grade");
 	      return $grade == $info->grade;
 	    }
 	  else { return true; }
@@ -500,6 +500,8 @@ class mod_vpl_submission {
             // Save assessment comments.
             $comments = $info->comments;
 
+
+
 	    // Update gradebook.
             $grades = array ();
             $gradeinfo = array ();
@@ -513,6 +515,7 @@ class mod_vpl_submission {
 	       {
 	       	$adjustedGradeTries = $this->reduce_grade($info->grade); 
 		$adjustedGradeLate = $this->get_late_grade($adjustedGradeTries);
+		
 		$gradeinfo['rawgrade'] = $adjustedGradeLate;
 		}
 	       else //Warn students their assignment is not done yet.
@@ -536,6 +539,8 @@ class mod_vpl_submission {
 		
                 $gradeinfo['feedbackformat'] = FORMAT_HTML;
             }
+	    //End MKB replace
+
 
 	    //save comments to file here!
 	    
@@ -550,6 +555,7 @@ class mod_vpl_submission {
             } else if (file_exists( $fn )) {
                 unlink( $fn );
             }
+	    /* original - compelted above before comments are recorded.
             // Update gradebook.
             $grades = [];
             $gradeinfo = [];
@@ -559,7 +565,9 @@ class mod_vpl_submission {
                 $gradeinfo['feedback'] = $this->result_to_html( $comments, false );
                 $gradeinfo['feedbackformat'] = FORMAT_HTML;
             }
-            if ($this->instance->grader > 0) { // Don't add grader if automatic.
+	    */
+
+	    if ($this->instance->grader > 0) { // Don't add grader if automatic.
                 $gradeinfo['usermodified'] = $this->instance->grader;
             } else { // This avoid to use an unexisting userid (0) in the gradebook.
                 $gradeinfo['usermodified'] = $USER->id;
